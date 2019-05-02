@@ -11,7 +11,7 @@ Java Texas Hold 'em game
 > et cetera
 
 ### To do:
-* Fully implement players as well as a table object to store the data of a poker round
+* Fully implement players as well as a table object to store the data necessary to depict the current state of the poker game for a player
   * Table
     * pre-flop, flop, turn, river, or an interim?
     * list of players
