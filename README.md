@@ -32,4 +32,4 @@ Java Texas Hold 'em game
   * When back at dealer, go to next round--repeat til last round of betting
   * Showdown, award pot to winner
 * Create a GUI 
-  *or, make this application a server which sends the state of the poker game to a web client which can respond with a players action, creating a multiplayer online poker game
+  * or, make this application a server which sends the state of the poker game to a web client which can respond with a players action, creating a multiplayer online poker game
