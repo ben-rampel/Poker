@@ -24,6 +24,7 @@ Java Texas Hold 'em game
     * dealer? small blind? big blind?
     * how many chips have they bet in the current round
 * Create the functionality to play a round of poker
+  * Post blinds
   * Show cards
   * Allow bets starting at dealer
     * Add bet to pot, show players the actions of other players
