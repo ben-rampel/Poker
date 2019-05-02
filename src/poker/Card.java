@@ -6,9 +6,9 @@ package poker;
  * Define an abstraction to store and return the information shown on a card
  */
 public class Card {
-    private Suit suit;
+    private final Suit suit;
 
-    private Rank rank;
+    private final Rank rank;
 
     public Card(Suit s, Rank r) {
         suit = s;

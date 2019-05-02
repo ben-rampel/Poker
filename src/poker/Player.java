@@ -11,7 +11,7 @@ public class Player {
      * Stores a player's game data such as name, hand (hole cards), and number of chips
      */
     protected Card[] hole;
-    private String name;
+    private final String name;
     private int chips;
 
     public Player(String name, int startingChips) {
@@ -113,13 +113,13 @@ public class Player {
                 if (7 < bestHandValue) bestHandValue = 7;
             }
             //test 2 pair
-            int paircount = 0;
+            int pairCount = 0;
             for (Card.Rank r : counts.keySet()) {
                 if (counts.get(r) == 2) {
-                    paircount++;
+                    pairCount++;
                 }
             }
-            if (paircount == 2) {
+            if (pairCount == 2) {
                 if (8 < bestHandValue) bestHandValue = 8;
             }
             //test pair

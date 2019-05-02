@@ -8,7 +8,7 @@ import java.util.*;
 
 public class utils {
     //Hold 'em hands in best to worst order
-    public static String[] handTypes = {
+    public static final String[] handTypes = {
             "Royal Flush",
             "Straight Flush",
             "Four of a kind",
@@ -50,6 +50,7 @@ public class utils {
         boolean straight = true;
         //check for each card if the next card is directly after in the rank orders
         for (int i = 0; i < sortedAceHigh.size() - 1; i++) {
+            //noinspection ComparatorResultComparison
             if ((comp.compare(sortedAceHigh.get(i), sortedAceHigh.get(i + 1)) != -1)) { //check if cards are connected
                 straight = false;
             }
@@ -64,6 +65,7 @@ public class utils {
             sortedAceLow.sort(comp);
             //check for each card if the next card is directly after in the rank orders
             for (int i = 0; i < sortedAceLow.size() - 1; i++) {
+                //noinspection ComparatorResultComparison
                 if ((comp.compare(sortedAceLow.get(i), sortedAceLow.get(i + 1)) != -1)) { //check if cards are connected
                     straight = false;
                 }

@@ -3,11 +3,11 @@ package tests;
 import poker.Card;
 import poker.Player;
 
-public class TestPlayer extends Player {
-    public TestPlayer(){
+class TestPlayer extends Player {
+    TestPlayer(){
         super("test",250);
     }
-     public void setHand(Card[] hand){
+    void setHand(Card[] hand){
         this.hole = hand;
     }
 }

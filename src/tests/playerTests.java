@@ -2,11 +2,8 @@ package tests;
 
 import org.junit.Test;
 import poker.Card;
-import poker.Deck;
-import poker.Player;
 
 import static org.junit.Assert.assertEquals;
-import static poker.utils.handTypes;
 
 public class playerTests {
     @Test

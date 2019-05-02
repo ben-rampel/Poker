@@ -17,10 +17,10 @@ public class SetOperations {
 
         List<List<T>> powerSet = new LinkedList<>();
 
-        for(int i = 0; i < mask.length; i++){
+        for (String s : mask) {
             List<T> subset = new LinkedList<>();
-            for(int j = 0; j < set.length; j++){
-                if(mask[i].toCharArray()[j]  == '1'){
+            for (int j = 0; j < set.length; j++) {
+                if (s.toCharArray()[j] == '1') {
                     subset.add(set[j]);
                 }
             }

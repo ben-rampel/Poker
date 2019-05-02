@@ -11,7 +11,7 @@ import java.util.Random;
  */
 public class Deck implements Iterator<Card> {
     final private int index;
-    private List<Card> deck;
+    private final List<Card> deck;
 
     /*
      * Creating a deck object initializes the deck list with a card of each possible rank and suit,
