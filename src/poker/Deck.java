@@ -6,28 +6,35 @@ import java.util.List;
 import java.util.Random;
 
 /*
- * A deck is created storing the 52 different cards in a standard deck of cards and shuffled
- * One card at a time can be drawn from the top with the next() method, removing said card
- * from the deck.
+ * Deck
+ * A Deck stores the 52 cards found in a standard deck of cards
  */
 public class Deck implements Iterator<Card> {
-    private List<Card> deck;
     final private int index;
+    private List<Card> deck;
 
-    public Deck(){
+    /*
+     * Creating a deck object initializes the deck list with a card of each possible rank and suit,
+     * making a standard 52-card deck. Then it shuffles itself
+     */
+    public Deck() {
         deck = new ArrayList<>();
-        for(Card.Rank r : Card.Rank.values()) {
-            for(Card.Suite s : Card.Suite.values()){
-                deck.add(new Card(r,s));
+        for (Card.Rank r : Card.Rank.values()) {
+            for (Card.Suit s : Card.Suit.values()) {
+                deck.add(new Card(r, s));
             }
         }
         index = 0;
         shuffle();
     }
 
-    public void shuffle(){
+    /*
+     * void shuffle()
+     * method to pseudorandomly move cards around to simulate shuffling the deck
+     */
+    public void shuffle() {
         Random r = new Random();
-        for(int i = 0; i < 10; i++) {
+        for (int i = 0; i < 10; i++) {
             for (int j = 0; j < 52; j++) {
                 int n = r.nextInt(52);
                 Card temp = deck.get(j);
@@ -37,8 +44,12 @@ public class Deck implements Iterator<Card> {
         }
     }
 
-    public Card next(){
-        if(hasNext()) {
+    /*
+     * Card next()
+     * draws and returns card from the top of the deck, removing it from the deck's cards
+     */
+    public Card next() {
+        if (hasNext()) {
             Card draw = deck.get(index);
             deck.remove(index);
             return draw;
@@ -47,6 +58,11 @@ public class Deck implements Iterator<Card> {
         }
     }
 
+    /*
+     * boolean hasNext()
+     * returns true if the deck has any card(s) left
+     * returns false if the deck is empty
+     */
     @Override
     public boolean hasNext() {
         return (deck.size() > 0);

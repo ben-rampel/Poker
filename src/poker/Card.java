@@ -2,39 +2,41 @@ package poker;
 
 
 /*
- * Define an abstraction to store a cards information
+ * Card
+ * Define an abstraction to store and return the information shown on a card
  */
 public class Card {
-    public enum Suite {clubs, hearts, diamonds, spades};
-    public enum Rank {two,three,four,five,six,seven,eight,nine,ten,jack,queen,king,ace};
+    private Suit suit;
 
-    private Suite suite;
     private Rank rank;
 
-
-    public Card(Suite s, Rank r){
-        suite = s;
+    public Card(Suit s, Rank r) {
+        suit = s;
+        rank = r;
+    }
+    public Card(Rank r, Suit s) {
+        suit = s;
         rank = r;
     }
 
-    public Card(Rank r, Suite s){
-        suite = s;
-        rank = r;
-    }
-
-    public Suite getSuite() {
-        return suite;
+    public Suit getSuit() {
+        return suit;
     }
 
     public Rank getRank() {
         return rank;
     }
 
-    public boolean equals(Card other){
-        return (rank == other.rank && suite == other.suite);
+    public boolean equals(Card other) {
+        return (rank == other.rank && suit == other.suit);
     }
-    public String toString(){
-        return rank + " of " + suite;
+
+    public String toString() {
+        return rank + " of " + suit;
     }
+
+    public enum Suit {clubs, hearts, diamonds, spades}
+
+    public enum Rank {two, three, four, five, six, seven, eight, nine, ten, jack, queen, king, ace}
 
 }

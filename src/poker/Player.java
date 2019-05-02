@@ -1,22 +1,27 @@
 package poker;
 
 public class Player {
+    /*
+     * Player
+     * Abstraction of a player in a Poker game
+     * Stores a player's game data such as name, hand (hole cards), and number of chips
+     */
     private Card[] hole;
     private String name;
     private int chips;
 
-    public Player(String name, int startingChips){
+    public Player(String name, int startingChips) {
         this.name = name;
         chips = startingChips;
         hole = new Card[2];
     }
 
-    public String getName(){
+    public String getName() {
         return name;
     }
 
-    public void drawHole(Deck d){
-        for(int i = 0; i < 2; i++){
+    public void drawHole(Deck d) {
+        for (int i = 0; i < 2; i++) {
             hole[i] = d.next();
         }
     }
@@ -26,7 +31,7 @@ public class Player {
     }
 
     public String getHoleAsString() {
-        if(hole[0] == null || hole[1] == null) {
+        if (hole[0] == null || hole[1] == null) {
             throw new RuntimeException("No cards in hole");
         } else {
             return hole[0] + ", " + hole[1];
@@ -37,8 +42,8 @@ public class Player {
         return chips;
     }
 
-    public void buyIn(int chips){
-        if(this.chips == 0) this.chips = chips;
+    public void buyIn(int chips) {
+        if (this.chips == 0) this.chips = chips;
     }
 
 
