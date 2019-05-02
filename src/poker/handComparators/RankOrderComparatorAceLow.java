@@ -1,4 +1,6 @@
-package poker;
+package poker.handComparators;
+
+import poker.Card;
 
 import java.util.Arrays;
 import java.util.List;
