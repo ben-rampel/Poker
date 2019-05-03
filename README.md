@@ -32,8 +32,8 @@ Java Texas Hold 'em game
   * ~~Allow bets starting at the player after the big blind
     * ~~Add bet to pot, show players the actions of other players
     * ~~If a player folds, remove from table
-  * ~~If only one player hasn't folded, end round and award pot
-  * ~~When back at dealer, go to next round--repeat til last round of betting
-  * ~~Showdown, award pot to winner
+  * ~~If only one player hasn't folded, end round and award pot~~
+  * ~~When back at dealer, go to next round--repeat til last round of betting~~
+  * ~~Showdown, award pot to winner~~
 * Create a GUI 
   * perhaps an MVC web application to facilitate online multiplayer poker
