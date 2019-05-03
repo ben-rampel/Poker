@@ -170,6 +170,7 @@ public class Player {
                 System.out.println("Cannot call.");
             }
         }
+        //note: fatal exception if you say raise without a number
         if(turn.toLowerCase().contains("raise")){
             int raiseAmount = Integer.parseInt(turn.substring(6));
             if(t.getOptions().contains(Turn.PlayerAction.RAISE)) {
@@ -182,6 +183,8 @@ public class Player {
         return new Turn(this, Turn.PlayerAction.FOLD, 0);
     }
 
-
+    public void receiveWinnings(int amount){
+        chips += amount;
+    }
 
 }
