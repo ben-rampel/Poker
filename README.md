@@ -26,7 +26,7 @@ Java Texas Hold 'em game
 * Create the functionality to play a round of poker
   * Post blinds
   * Show cards
-  * Allow bets starting at dealer
+  * Allow bets starting at the player after the big blind
     * Add bet to pot, show players the actions of other players
     * If a player folds, remove from table
   * If only one player hasn't folded, end round and award pot
