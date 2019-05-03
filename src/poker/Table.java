@@ -56,16 +56,19 @@ public class Table {
      * Currently assumes both blinds will accept. Needs functionality to give next player chance to post blinds if the first one folds
      */
     public void startRound(){
+        for(Map.Entry<Player,Boolean> entry: playersInRound.entrySet()){
+            entry.setValue(true);
+        }
         dealerIndex++;
         Player[] players = playersInRound.keySet().toArray(new Player[0]);
         //Tell player left of dealer he may fold or post the small blind
         Turn lastTurn = new Turn(null,null,0);
 
-       // while(players.length > 0) {
-            players[dealerIndex + 1].setRequiredBet(smallBlind);
-            lastTurn = players[dealerIndex + 1].playTurn(
+       while(players.length > 0) {
+            players[(dealerIndex + 1) % players.length].setRequiredBet(smallBlind);
+            lastTurn = players[(dealerIndex + 1) % players.length].playTurn(
                     new TurnNotification(Arrays.asList(Turn.PlayerAction.FOLD, Turn.PlayerAction.CALL),
-                            0, smallBlind));/*
+                            0, smallBlind));
             if(lastTurn.getAction() == Turn.PlayerAction.FOLD){
                 playersInRound.put(lastTurn.getPlayer(),false);
                 List<Player> nonFoldedPlayers = new ArrayList<>();
@@ -78,35 +81,39 @@ public class Table {
                 currentPlayerIndex++;
             } else {
                 break;
-            }*/
-       // }
+            }
+        }
+        if(players.length == 0) {
+            return;
+        }
             receivePlayerTurn(lastTurn);
-            players[dealerIndex + 2].setRequiredBet(bigBlind);
-            lastTurn = players[dealerIndex + 2].playTurn(
+            players[(dealerIndex + 2)%players.length].setRequiredBet(bigBlind);
+            lastTurn = players[(dealerIndex + 2)%players.length].playTurn(
                     new TurnNotification(Arrays.asList(Turn.PlayerAction.FOLD, Turn.PlayerAction.CALL),
                             0, bigBlind));
 
+        for(Player p : players){
+            p.drawHole(deck);
+            System.out.println(p.getName() +  ", your hand is: " + p.getHoleAsString() + ". You have " + p.getChips() + " chips.");
+        }
 
             receivePlayerTurn(lastTurn);
 
 
-        for(Player p : playersInRound.keySet()){
-            p.drawHole(deck);
-            System.out.println(p.getName() +  ", your hand is: " + p.getHoleAsString() + ". You have " + p.getChips() + " chips.");
-        }
+
 
         System.out.println("POT AMOUNT: " + potSize);
 
         currentPlayerIndex = dealerIndex + 3;
         lastTurn = players[currentPlayerIndex%players.length].playTurn(
                 new TurnNotification(Arrays.asList(Turn.PlayerAction.FOLD, Turn.PlayerAction.CALL, Turn.PlayerAction.RAISE),
-                        playerBets.get(players[currentPlayerIndex - 1]), 0));
+                        playerBets.get(players[(currentPlayerIndex - 1)%players.length]), 0));
         receivePlayerTurn(lastTurn);
 
         System.out.println("Winner: " + winner.getName() + " with a " + handTypes[winner.bestHand(commonCards.toArray(new Card[0]))-1]);
         winner.receiveWinnings(potSize);
 
-        for(Player p : playersInRound.keySet()){
+        for(Player p : players){
             p.drawHole(deck);
             System.out.println(p.getName() +  ", your hand was: " + p.getHoleAsString() + ". You now have " + p.getChips() + " chips.");
         }
@@ -127,14 +134,14 @@ public class Table {
             playersInRound.put(t.getPlayer(), false);
         }
         System.out.println("TABLE RECEIVED ACTION OF\n\t " + t.toString());
-        /*List<Player> nonFoldedPlayers = new ArrayList<>();
+        List<Player> nonFoldedPlayers = new ArrayList<>();
         for(Player p : playersInRound.keySet()){
             if(playersInRound.get(p)){
                 nonFoldedPlayers.add(p);
             }
         }
-        Player[] players = nonFoldedPlayers.toArray(new Player[0]);*/
-        Player[] players = playersInRound.keySet().toArray(new Player[0]);
+        Player[] players = nonFoldedPlayers.toArray(new Player[0]);
+        //Player[] players = playersInRound.keySet().toArray(new Player[0]);
         currentPlayerIndex++;
 
         //go to next round once the dealer plays his turn
@@ -156,10 +163,10 @@ public class Table {
                 case RIVER: round = ROUND.INTERIM;
                 int bestHand = 10;
                 for(int i = 0; i < players.length; i++){
-                    if(players[i].bestHand(commonCards.toArray(new Card[0])) < bestHand){
-                        bestHand = players[i].bestHand(commonCards.toArray(new Card[0]));
-                        winner = players[i];
-                    }
+                        if (players[i].bestHand(commonCards.toArray(new Card[0])) < bestHand) {
+                            bestHand = players[i].bestHand(commonCards.toArray(new Card[0]));
+                            winner = players[i];
+                        }
                 }
                 break;
             }

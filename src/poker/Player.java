@@ -187,4 +187,8 @@ public class Player {
         chips += amount;
     }
 
+    public void clearHole(){
+        hole = null;
+    }
+
 }
