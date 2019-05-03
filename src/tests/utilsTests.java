@@ -1,7 +1,6 @@
 package tests;
 
 import org.junit.Test;
-import org.junit.jupiter.api.DisplayName;
 import poker.Card;
 
 import java.util.ArrayList;
@@ -14,7 +13,6 @@ import static poker.utils.*;
 public class utilsTests {
 
     @Test
-    @DisplayName("Test if the isStraight and isFlush methods are correct")
     public void straightAndFlushTest() {
 
         List<Card> straight = new ArrayList<>();

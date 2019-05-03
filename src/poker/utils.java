@@ -21,7 +21,6 @@ public class utils {
             "High card"
     };
 
-
     /*
      * boolean containsCard(List<Card>,rank,suite)
      * returns true if the list contains the card with specified rank and suit
