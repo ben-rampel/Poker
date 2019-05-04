@@ -1,6 +1,6 @@
-#Implementing the Poker Game into a Spring MVC web app:
+# Implementing the Poker Game into a Spring MVC web app:
 
-###How to run right now
+### How to run right now
 the PokerController class has a startGame method to initialize a poker table object 
 with the players hardcoded in the method. to run and access the app you must:
 
@@ -10,7 +10,7 @@ with the players hardcoded in the method. to run and access the app you must:
          
 currently the view template is very basic and nonfunctional. it only gets the potSize dynamically from the model.
 
-###To do
+### To do
 
     * Fill players in the view with actual player names and chip amounts 
         * number of player seats can be fixed at 6 for now, with empty seats marked as such
