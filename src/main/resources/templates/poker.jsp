@@ -103,7 +103,7 @@
 		</div>
 
 		<div class ="potAmount">
-			<span>11 chips</span>
+			<span>${potSize}</span>
 		</div>
 	</div>
 	</div>

@@ -5,7 +5,7 @@ import java.util.*;
 import static poker.utils.handTypes;
 
 public class Table {
-    private enum ROUND {PREFLOP, FLOP, TURN, RIVER, INTERIM}
+    public enum ROUND {PREFLOP, FLOP, TURN, RIVER, INTERIM}
     private ROUND round;
     private Deck deck;
     //Map the list of playerBets to their current bet in the round
@@ -16,10 +16,92 @@ public class Table {
     private int dealerIndex;
     private int currentPlayerIndex;
 
+    private TurnNotification currentTurn;
+
     private final int smallBlind;
     private final int bigBlind;
 
     private Player winner;
+
+    public ROUND getRound() {
+        return round;
+    }
+
+    public void setRound(ROUND round) {
+        this.round = round;
+    }
+
+    public Deck getDeck() {
+        return deck;
+    }
+
+    public void setDeck(Deck deck) {
+        this.deck = deck;
+    }
+
+    public Map<Player, Integer> getPlayerBets() {
+        return playerBets;
+    }
+
+    public void setPlayerBets(Map<Player, Integer> playerBets) {
+        this.playerBets = playerBets;
+    }
+
+    public Map<Player, Boolean> getPlayersInRound() {
+        return playersInRound;
+    }
+
+    public void setPlayersInRound(Map<Player, Boolean> playersInRound) {
+        this.playersInRound = playersInRound;
+    }
+
+    public List<Card> getCommonCards() {
+        return commonCards;
+    }
+
+    public void setCommonCards(List<Card> commonCards) {
+        this.commonCards = commonCards;
+    }
+
+    public int getPotSize() {
+        return potSize;
+    }
+
+    public void setPotSize(int potSize) {
+        this.potSize = potSize;
+    }
+
+    public int getDealerIndex() {
+        return dealerIndex;
+    }
+
+    public void setDealerIndex(int dealerIndex) {
+        this.dealerIndex = dealerIndex;
+    }
+
+    public int getCurrentPlayerIndex() {
+        return currentPlayerIndex;
+    }
+
+    public void setCurrentPlayerIndex(int currentPlayerIndex) {
+        this.currentPlayerIndex = currentPlayerIndex;
+    }
+
+    public int getSmallBlind() {
+        return smallBlind;
+    }
+
+    public int getBigBlind() {
+        return bigBlind;
+    }
+
+    public Player getWinner() {
+        return winner;
+    }
+
+    public void setWinner(Player winner) {
+        this.winner = winner;
+    }
 
     public Table(List<Player> players){
         playerBets = new HashMap<>();
@@ -204,5 +286,13 @@ public class Table {
 
     }
 
+    public Player getPlayerFromName(String name){
+        for(Player p : playersInRound.keySet()){
+            if(name.equals(p.getName())){
+                return p;
+            }
+        }
+        return null;
+    }
 
 }

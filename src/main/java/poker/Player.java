@@ -1,5 +1,7 @@
 package poker;
 
+import hello.PokerController;
+
 import java.util.*;
 
 import static poker.utils.*;
@@ -139,6 +141,11 @@ public class Player {
 
     public void setRequiredBet(int requiredBet) {
         this.requiredBet = requiredBet;
+    }
+
+    //must be adapted to mvc
+    public Turn playTurn(TurnNotification t, PokerController controller) {
+          return controller.handleTurnNotification(t);
     }
 
     public Turn playTurn(TurnNotification t){
