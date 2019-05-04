@@ -1,23 +1,27 @@
-# Poker
-Java Texas Hold 'em game
+#Implementing the Poker Game into a Spring MVC web app:
 
-### Done:
-* Card, deck, table abstractions
-* Turn and TurnNotification event abstractions
-* Methods to determine a player's best hand 
-  * e.g. from a player's 2 hole cards + 5 community cards, what is the highest ranked hand he can play
->1. Royal Flush 
->2. Straight Flush
->3. Four of a kind   
-> et cetera
+###How to run right now
+the PokerController class has a startGame method to initialize a poker table object 
+with the players hardcoded in the method. to run and access the app you must:
 
-* Can play a round of poker via command line
+     * spring-boot:run in maven
+     * localhost:8080/startGame
+     * localhost:8080/game?player=John (or a name of a player in the game)
+         
+currently the view template is very basic and nonfunctional. it only gets the potSize dynamically from the model.
 
-### To do:
-* ~~Fully implement players as well as a table object to store the data necessary to depict the current state of the poker game for a player~~
+###To do
 
-* ~~Create the functionality to play a round of poker~~
-
-* Fix bugs and make sure the game perfectly represents how a round of Texas Hold 'em would work
-
-* Integrate the created poker model into an MVC web framework to create an online poker game
+    * Fill players in the view with actual player names and chip amounts 
+        * number of player seats can be fixed at 6 for now, with empty seats marked as such
+    * Render turn options in the player's view when the currentTurnNotification.getPlayer equals the player for whom the view is displayed
+    * Create form in the turn options that POSTs a Turn object to /sendTurn to complete the player's turn and advance the game
+    * Dynamically render table and player attributes in the view
+        * player cards and common cards
+        * players in the round
+        * etc
+    * move the dealer button around in the view based on the table.dealerIndex
+    * note who has folded, whose turn it is in view
+    * get the view to update every second? 
+    
+    * a form to create a player and join the game
