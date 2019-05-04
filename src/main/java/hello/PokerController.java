@@ -7,10 +7,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import poker.*;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static poker.utils.handTypes;
 
@@ -30,10 +27,30 @@ public class PokerController {
         model.addAttribute("commonCard", table.getCommonCards());
         return "poker";
     }
+
+    @GetMapping("/startGame")
+    public String startGame(){
+        table = new Table();
+        List<Player> playerList = new LinkedList<>();
+        playerList.add(new Player("John", 250));
+        playerList.add(new Player("Bob", 250));
+        playerList.add(new Player("Carl", 250));
+        playerList.add(new Player("Joe", 250));
+        addPlayers(playerList);
+        startRound();
+
+        return "";
+    }
+
     @PutMapping("/sendTurn")
     public String sendTurn(@RequestParam(name="turn") String turn, Model model){
         //parse turn into a new turn object and put in currentTurn
         return "";
+    }
+    public void addPlayers(List<Player> players){
+        for(Player p : players){
+            table.addPlayer(p);
+        }
     }
 
     public void startRound(){
