@@ -126,7 +126,6 @@
 
 		<div class ="commonCards">
 			<span th:text="${commonCards}" class="card">
-
 			</span>
 		</div>
 
@@ -142,9 +141,13 @@
 	}, 5000);
 
 	$("#foldForm").ajaxForm({url: '/sendTurn', type: 'post'});
+
 	$("#checkForm").ajaxForm({url: '/sendTurn', type: 'post'});
 	$("#callForm").ajaxForm({url: '/sendTurn', type: 'post'});
 	$("#raiseForm").ajaxForm({url: '/sendTurn', type: 'post'});
-
+$('form').submit(function(){
+	sleep(200);
+  	location.reload(true);
+});
 </script>
 </html>

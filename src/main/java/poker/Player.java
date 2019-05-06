@@ -145,49 +145,9 @@ public class Player {
 
     //must be adapted to mvc
     public Turn playTurn(TurnNotification t, PokerController controller) {
-          return controller.handleTurnNotification(t);
-    }
-
-    public Turn playTurn(TurnNotification t){
-        myTurn = t;
-        System.out.println(name + ", you can: ");
-        for(Turn.PlayerAction a : t.getOptions()){
-            System.out.println("\t" + a);
-        }
-        if(t.getMinimumBet() > 0) System.out.println("Minimum bet: " + t.getMinimumBet());
-        if(t.getRequiredBet() > 0) System.out.println("Required bet: " +  t.getRequiredBet());
-        System.out.println("Type your turn information");
-        Scanner turnScanner = new Scanner(System.in);
-        String turn = turnScanner.nextLine();
-
-        if(turn.toLowerCase().contains("check")){
-            if(t.getOptions().contains(Turn.PlayerAction.CHECK)) {
-                return new Turn(this, Turn.PlayerAction.CHECK, 0);
-            } else {
-                System.out.println("Cannot check.");
-            }
-        }
-        if(turn.toLowerCase().contains("call")){
-            int call = 0;
-            if(t.getRequiredBet() > 0) {call = t.getRequiredBet();} else {call = t.getMinimumBet(); }
-            if(t.getOptions().contains(Turn.PlayerAction.CALL)) {
-                chips -= call;
-                return new Turn(this, Turn.PlayerAction.CALL, call);
-            } else {
-                System.out.println("Cannot call.");
-            }
-        }
-        //note: fatal exception if you say raise without a number
-        if(turn.toLowerCase().contains("raise")){
-            int raiseAmount = Integer.parseInt(turn.substring(6));
-            if(t.getOptions().contains(Turn.PlayerAction.RAISE)) {
-                chips -= raiseAmount;
-                return new Turn(this, Turn.PlayerAction.RAISE, raiseAmount);
-            } else {
-                System.out.println("Cannot call.");
-            }
-        }
-        return new Turn(this, Turn.PlayerAction.FOLD, 0);
+        Turn turn = controller.handleTurnNotification(t);
+        this.chips -= turn.getBetAmount();
+        return turn;
     }
 
     public void receiveWinnings(int amount){
