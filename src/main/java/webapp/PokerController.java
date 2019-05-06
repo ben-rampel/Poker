@@ -19,17 +19,21 @@ public class PokerController {
 
     @GetMapping("/game")
     public String game(@RequestParam(name="player") String player, Model model) {
-        model.addAttribute("playerName",player);
-        model.addAttribute("currentTurnNotification",currentTurnNotification);
         LinkedHashMap<Player,Boolean> players = new LinkedHashMap<>(table.getPlayersInRound());
         while(players.size() < 6){
             players.put(new Player("Empty seat",0), false);
         }
-
         model.addAttribute("players", players);
         model.addAttribute("potSize", table.getPotSize());
-        model.addAttribute("playerHand", table.getPlayerFromName(player));
+        if(table.getPlayerFromName(player).getHole()[0] != null) {
+            model.addAttribute("playerHand", table.getPlayerFromName(player).getHoleAsString());
+        } else {
+            model.addAttribute("playerHand", "No cards");
+        }
         model.addAttribute("commonCard", table.getCommonCards());
+
+        /* TODO: Check if the currentTurnNotification is for the given player. if it is, add the TurnNotification to the model */
+
         return "poker";
     }
 

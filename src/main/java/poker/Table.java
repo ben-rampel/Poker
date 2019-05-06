@@ -288,7 +288,7 @@ public class Table {
 
     public Player getPlayerFromName(String name){
         for(Player p : playersInRound.keySet()){
-            if(name.equals(p.getName())){
+            if(name.equals(p.getName()) || name.equals(p.getName().toLowerCase())){
                 return p;
             }
         }
