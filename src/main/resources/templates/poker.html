@@ -52,6 +52,30 @@
 		top: -100px;
 		position:relative;
 	}
+	#player1 {
+		margin-left: -50px;
+		margin-top:  100px;
+	}
+	#player2 {
+		margin-top: 250px;
+		margin-left:167px;
+	}
+	#player3 {
+		margin-top: 250px;
+		margin-left:434px;
+	}
+	#player4 {
+		margin-top: -50px;
+		margin-left:167px;
+	}
+	#player5 {
+		margin-top: -50px;
+		margin-left: 434px;
+	}
+	#player6 {
+		margin-left: 650px;
+		margin-top: 100px;
+	}
 </style>
 
 <body>
@@ -67,31 +91,15 @@
 	</div>
 	</div>
 	<div class="table">
-		<div class="player" style="margin-left: -50px;margin-top:100px">
-			<p class="playerLabel">You</p>
-			<p class="playerChipsLabel">248 chips</p>
+		<div th:each="player,iter : ${players.keySet()}">
+
+			<div class="player" th:id="'player' + ${{iter.index + 1}}">
+				<p class="playerLabel" th:text="${{player.name}}">You</p>
+				<p class="playerChipsLabel" th:text="${{player.chips}}">248 chips</p>
+			</div>
+
 		</div>
-		<div class="player" style="margin-top: 250px; margin-left:167px">
-			<p class="playerLabel">Player 2</p>
-			<p class="playerChipsLabel">249 chips</p>
-			<div id="dealerButton"></div>
-		</div>
-		<div class="player" style="margin-top: 250px; margin-left:434px">
-			<p class="playerLabel">Player 3</p>
-			<p class="playerChipsLabel">248 chips</p>
-		</div>
-		<div class="player" style="margin-top: -50px; margin-left:167px">
-			<p class="playerLabel">Player 4</p>
-			<p class="playerChipsLabel">248 chips</p>
-		</div>
-		<div class="player" style="margin-top: -50; margin-left: 434px">
-			<p class="playerLabel">Player 5</p>
-			<p class="playerChipsLabel">248 chips</p>
-		</div>
-		<div class="player" style="margin-left: 650px;margin-top: 100px">
-			<p class="playerLabel">Player 6</p>
-			<p class="playerChipsLabel">248 chips</p>
-		</div>
+
 		<div class ="commonCards">
 			<span class="card">
 				As

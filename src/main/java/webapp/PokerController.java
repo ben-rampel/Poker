@@ -1,4 +1,4 @@
-package hello;
+package webapp;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -21,7 +21,12 @@ public class PokerController {
     public String game(@RequestParam(name="player") String player, Model model) {
         model.addAttribute("playerName",player);
         model.addAttribute("currentTurnNotification",currentTurnNotification);
-        model.addAttribute("playersInRound", table.getPlayersInRound());
+        LinkedHashMap<Player,Boolean> players = new LinkedHashMap<>(table.getPlayersInRound());
+        while(players.size() < 6){
+            players.put(new Player("Empty seat",0), false);
+        }
+
+        model.addAttribute("players", players);
         model.addAttribute("potSize", table.getPotSize());
         model.addAttribute("playerHand", table.getPlayerFromName(player));
         model.addAttribute("commonCard", table.getCommonCards());

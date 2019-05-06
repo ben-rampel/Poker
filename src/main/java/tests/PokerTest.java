@@ -1,6 +1,9 @@
-package poker;
+package tests;
 
-public class TableController {
+import poker.Player;
+import poker.Table;
+
+public class PokerTest {
     public static void main(String[] args){
         Table test = new Table();
         test.addPlayer(new Player("John", 250));
