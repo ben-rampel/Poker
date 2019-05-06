@@ -10,7 +10,7 @@ public class PokerTest {
         test.addPlayer(new Player("Bob", 250));
         test.addPlayer(new Player("Carl", 250));
         test.addPlayer(new Player("Joe", 250));
-        test.startRound();
+        //test.startRound();
 
     }
 }

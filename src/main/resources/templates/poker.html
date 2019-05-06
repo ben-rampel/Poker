@@ -83,32 +83,45 @@
 	<div class="dashboard">
 	<p>Your Cards:</p>
 		<p th:text="${playerHand}"/>
-	<div style="padding-top:40px;">
-		<button>Fold</button>
-		<button>Check</button>
-		<button>Bet <input type="text" style="width:40px;"> chips</button>
+	<div style="padding-top:40px;" th:if="${turnNotification != null}">
+		<form  target="_blank" th:if="${turnNotification != null}" action="/sendTurn" method="POST">
+			<input type="hidden" name ="player" th:value="${currentPlayer}" />
+			<input type="hidden" name ="turn" value="FOLD" />
+			<input type="hidden" name ="amount" value="0" />
+			<input type="submit" value="fold" />
+		</form>
+		<form  target="_blank" th:if="${turnNotification != null && turnNotification.getOptions().contains(CALL)}" action="/sendTurn?" method="POST">
+			<input type="hidden" name="player" th:value="${currentPlayer}" />
+			<input type="hidden" name="turn" value="CALL" />
+			<input type="hidden" name="amount" th:value="${turnNotification.getRequiredBet()}" />
+			<input type="submit" value="call" />
+		</form>
+		<form  target="_blank" th:if="${turnNotification != null && turnNotification.getOptions().contains(CHECK)}" action="/sendTurn" method="POST">
+			<input type="hidden" name ="player" th:value="${currentPlayer}" />
+			<input type="hidden" name ="turn" value="CHECK" />
+			<input type="hidden" name ="amount" value="0" />
+			<input type="submit" value="check" />
+		</form>
+		<form  target="_blank" th:if="${turnNotification != null && turnNotification.getOptions().contains(RAISE)}" action="/sendTurn" method="POST">
+			<input type="hidden" name="player" th:value="${currentPlayer}" />
+			<input type="hidden" name="turn" value="RAISE" />
+			<input type="text" name="amount" th:value="${turnNotification.getMinimumBet()}" />
+			<input type="submit" value="raise" />
+		</form>
 	</div>
 	</div>
 	<div class="table">
 		<div th:each="player,iter : ${players.keySet()}">
-
 			<div class="player" th:id="'player' + ${{iter.index + 1}}">
 				<p class="playerLabel" th:text="${{player.name}}">You</p>
 				<p class="playerChipsLabel" th:text="${{player.chips}}">248 chips</p>
 			</div>
-
 		</div>
 
 		<div class ="commonCards">
-			<span class="card">
-				As
+			<span th:text="${commonCards}" class="card">
+
 			</span>
-			<span class="card">
-				Ah
-			</span>
-			<span class="card">
-				6d
-			</span>						
 		</div>
 
 		<div class ="potAmount">
@@ -117,4 +130,9 @@
 	</div>
 	</div>
 </body>
+<script>
+	setTimeout(function(){
+   window.location.reload(1);
+}, 5000);
+</script>
 </html>

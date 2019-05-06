@@ -3,12 +3,14 @@ package webapp;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import poker.*;
 
 import java.util.*;
 
+import static poker.Turn.PlayerAction.*;
 import static poker.utils.handTypes;
 
 @Controller
@@ -30,12 +32,23 @@ public class PokerController {
         } else {
             model.addAttribute("playerHand", "No cards");
         }
-        model.addAttribute("commonCard", table.getCommonCards());
+        model.addAttribute("commonCards", table.getCommonCards().toString());
 
         /* TODO: Check if the currentTurnNotification is for the given player. if it is, add the TurnNotification to the model */
+        if(currentTurnNotification.getPlayer().getName().equals(player)){
+            model.addAttribute("turnNotification", currentTurnNotification);
+        }
+        model.addAttribute("currentPlayer",player);
+        model.addAttribute("RAISE",RAISE);
+        model.addAttribute("CALL",CALL);
+        model.addAttribute("CHECK",CHECK);
+        model.addAttribute("FOLD",FOLD);
+
 
         return "poker";
     }
+
+
 
     @GetMapping("/startGame")
     public String startGame(){
@@ -51,10 +64,19 @@ public class PokerController {
         return "";
     }
 
-    @PutMapping("/sendTurn")
-    public String sendTurn(@RequestParam(name="turn") String turn, Model model){
-        //parse turn into a new turn object and put in currentTurn
-        return "";
+    @PostMapping("/sendTurn")
+    public String sendTurn(@RequestParam(name="turn") String turn, @RequestParam(name="player")String player, @RequestParam(name="amount") String amount, Model model){
+        Turn.PlayerAction action = FOLD;
+        if(turn.equals("CALL")){
+            action = CALL;
+        } else if(turn.equals("RAISE")){
+            action = RAISE;
+        } else {
+            action = CHECK;
+        }
+
+        currentTurn = new Turn(table.getPlayerFromName(player), action, Integer.parseInt(amount));
+        return "poker";
     }
     public void addPlayers(List<Player> players){
         for(Player p : players){
@@ -74,8 +96,8 @@ public class PokerController {
         while(players.length > 0) {
             players[(table.getDealerIndex() + 1) % players.length].setRequiredBet(table.getSmallBlind());
             lastTurn = players[(table.getDealerIndex() + 1) % players.length].playTurn(
-                    new TurnNotification(Arrays.asList(Turn.PlayerAction.FOLD, Turn.PlayerAction.CALL),
-                            0, table.getSmallBlind()),this);
+                    new TurnNotification(Arrays.asList(Turn.PlayerAction.FOLD, CALL),
+                            0, table.getSmallBlind(), players[(table.getDealerIndex() + 1) % players.length]),this);
             if(lastTurn.getAction() == Turn.PlayerAction.FOLD){
                 table.getPlayersInRound().put(lastTurn.getPlayer(),false);
                 List<Player> nonFoldedPlayers = new ArrayList<>();
@@ -96,8 +118,8 @@ public class PokerController {
         receivePlayerTurn(lastTurn);
         players[(table.getDealerIndex() + 2)%players.length].setRequiredBet(table.getBigBlind());
         lastTurn = players[(table.getDealerIndex() + 2)%players.length].playTurn(
-                new TurnNotification(Arrays.asList(Turn.PlayerAction.FOLD, Turn.PlayerAction.CALL),
-                        0, table.getBigBlind()),this);
+                new TurnNotification(Arrays.asList(Turn.PlayerAction.FOLD, CALL),
+                        0, table.getBigBlind(),players[(table.getDealerIndex() + 2)%players.length]),this);
 
         for(Player p : players){
             p.drawHole(table.getDeck());
@@ -113,8 +135,8 @@ public class PokerController {
 
         table.setCurrentPlayerIndex(table.getDealerIndex()+3);
         lastTurn = players[table.getCurrentPlayerIndex()%players.length].playTurn(
-                new TurnNotification(Arrays.asList(Turn.PlayerAction.FOLD, Turn.PlayerAction.CALL, Turn.PlayerAction.RAISE),
-                        table.getPlayerBets().get(players[(table.getCurrentPlayerIndex() - 1)%players.length]), 0),this);
+                new TurnNotification(Arrays.asList(Turn.PlayerAction.FOLD, CALL, Turn.PlayerAction.RAISE),
+                        table.getPlayerBets().get(players[(table.getCurrentPlayerIndex() - 1)%players.length]), 0,players[table.getCurrentPlayerIndex()%players.length]),this);
         receivePlayerTurn(lastTurn);
 
         System.out.println("Winner: " + table.getWinner().getName() + " with a " + handTypes[table.getWinner().bestHand(table.getCommonCards().toArray(new Card[0]))-1]);
@@ -183,7 +205,7 @@ public class PokerController {
                 table.setCurrentPlayerIndex(table.getDealerIndex() + 1);
                 receivePlayerTurn(players[table.getCurrentPlayerIndex() % players.length].playTurn(
                         new TurnNotification(Arrays.asList(Turn.PlayerAction.FOLD, Turn.PlayerAction.CHECK, Turn.PlayerAction.RAISE),
-                                0, 0),this));
+                                0, 0,players[table.getCurrentPlayerIndex() % players.length]),this));
             }
         } else {
 
@@ -191,19 +213,19 @@ public class PokerController {
             //and we are still in the same stage (haven't passed dealer), start passing turns around until we get back to the dealer
             if (table.getRound() == Table.ROUND.PREFLOP && players[table.getCurrentPlayerIndex() % players.length].getHole()[0] != null && table.getCurrentPlayerIndex() > table.getDealerIndex() + 3 && table.getCurrentPlayerIndex() <= table.getDealerIndex() + players.length) {
                 receivePlayerTurn(players[table.getCurrentPlayerIndex() % players.length].playTurn(
-                        new TurnNotification(Arrays.asList(Turn.PlayerAction.FOLD, Turn.PlayerAction.CALL, Turn.PlayerAction.RAISE),
-                                table.getPlayerBets().get(players[(table.getCurrentPlayerIndex() - 1) % players.length]), 0),this));
+                        new TurnNotification(Arrays.asList(Turn.PlayerAction.FOLD, CALL, Turn.PlayerAction.RAISE),
+                                table.getPlayerBets().get(players[(table.getCurrentPlayerIndex() - 1) % players.length]), 0,players[table.getCurrentPlayerIndex() % players.length]),this));
 
             }
             if (!(table.getRound() == Table.ROUND.PREFLOP || table.getRound() == Table.ROUND.INTERIM)) {
                 if (!table.getPlayerBets().containsKey(players[(table.getCurrentPlayerIndex() - 1) % players.length]) || table.getPlayerBets().get(players[(table.getCurrentPlayerIndex() - 1) % players.length]) == 0) {
                     receivePlayerTurn(players[table.getCurrentPlayerIndex() % players.length].playTurn(
                             new TurnNotification(Arrays.asList(Turn.PlayerAction.FOLD, Turn.PlayerAction.CHECK, Turn.PlayerAction.RAISE),
-                                    0, 0),this));
+                                    0, 0,players[table.getCurrentPlayerIndex() % players.length]),this));
                 } else {
                     receivePlayerTurn(players[table.getCurrentPlayerIndex() % players.length].playTurn(
-                            new TurnNotification(Arrays.asList(Turn.PlayerAction.FOLD, Turn.PlayerAction.CALL, Turn.PlayerAction.RAISE),
-                                    table.getPlayerBets().get(players[(table.getCurrentPlayerIndex() - 1) % players.length]), 0),this));
+                            new TurnNotification(Arrays.asList(Turn.PlayerAction.FOLD, CALL, Turn.PlayerAction.RAISE),
+                                    table.getPlayerBets().get(players[(table.getCurrentPlayerIndex() - 1) % players.length]), 0,players[table.getCurrentPlayerIndex() % players.length]),this));
                 }
             }
         }

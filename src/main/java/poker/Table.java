@@ -136,7 +136,7 @@ public class Table {
     /*
      * Start a round of poker by setting dealer, posting small blind, posting big blind, then telling the next player it's their turn
      * Currently assumes both blinds will accept. Needs functionality to give next player chance to post blinds if the first one folds
-     */
+     *//*
     public void startRound(){
         for(Map.Entry<Player,Boolean> entry: playersInRound.entrySet()){
             entry.setValue(true);
@@ -285,7 +285,7 @@ public class Table {
 
 
     }
-
+*/
     public Player getPlayerFromName(String name){
         for(Player p : playersInRound.keySet()){
             if(name.equals(p.getName()) || name.equals(p.getName().toLowerCase())){
