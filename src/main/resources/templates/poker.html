@@ -1,6 +1,12 @@
 <<html xmlns:th="http://www.thymeleaf.org">
 >
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script
+		src="https://code.jquery.com/jquery-3.4.1.min.js"
+		integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo="
+		crossorigin="anonymous"></script>
+<script src="http://malsup.github.com/jquery.form.js"></script>
+
 <style type="text/css">
 	.table {
 		height:300px;
@@ -84,25 +90,25 @@
 	<p>Your Cards:</p>
 		<p th:text="${playerHand}"/>
 	<div style="padding-top:40px;" th:if="${turnNotification != null}">
-		<form  target="_blank" th:if="${turnNotification != null}" action="/sendTurn" method="POST">
+		<form th:if="${turnNotification != null}" id="foldForm">
 			<input type="hidden" name ="player" th:value="${currentPlayer}" />
 			<input type="hidden" name ="turn" value="FOLD" />
 			<input type="hidden" name ="amount" value="0" />
 			<input type="submit" value="fold" />
 		</form>
-		<form  target="_blank" th:if="${turnNotification != null && turnNotification.getOptions().contains(CALL)}" action="/sendTurn?" method="POST">
+		<form th:if="${turnNotification != null && turnNotification.getOptions().contains(CALL)}" id="callForm">
 			<input type="hidden" name="player" th:value="${currentPlayer}" />
 			<input type="hidden" name="turn" value="CALL" />
 			<input type="hidden" name="amount" th:value="${turnNotification.getRequiredBet()}" />
 			<input type="submit" value="call" />
 		</form>
-		<form  target="_blank" th:if="${turnNotification != null && turnNotification.getOptions().contains(CHECK)}" action="/sendTurn" method="POST">
+		<form th:if="${turnNotification != null && turnNotification.getOptions().contains(CHECK)}" id="checkForm">
 			<input type="hidden" name ="player" th:value="${currentPlayer}" />
 			<input type="hidden" name ="turn" value="CHECK" />
 			<input type="hidden" name ="amount" value="0" />
 			<input type="submit" value="check" />
 		</form>
-		<form  target="_blank" th:if="${turnNotification != null && turnNotification.getOptions().contains(RAISE)}" action="/sendTurn" method="POST">
+		<form th:if="${turnNotification != null && turnNotification.getOptions().contains(RAISE)}" id="raiseForm">
 			<input type="hidden" name="player" th:value="${currentPlayer}" />
 			<input type="hidden" name="turn" value="RAISE" />
 			<input type="text" name="amount" th:value="${turnNotification.getMinimumBet()}" />
@@ -133,6 +139,12 @@
 <script>
 	setTimeout(function(){
    window.location.reload(1);
-}, 5000);
+	}, 5000);
+
+	$("#foldForm").ajaxForm({url: '/sendTurn', type: 'post'});
+	$("#checkForm").ajaxForm({url: '/sendTurn', type: 'post'});
+	$("#callForm").ajaxForm({url: '/sendTurn', type: 'post'});
+	$("#raiseForm").ajaxForm({url: '/sendTurn', type: 'post'});
+
 </script>
 </html>
