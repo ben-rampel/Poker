@@ -1,8 +1,11 @@
 package poker;
 
+import org.springframework.scheduling.annotation.Async;
 import webapp.PokerController;
 
 import java.util.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 import static poker.utils.*;
 
@@ -40,7 +43,7 @@ public class Player {
 
     public String getHoleAsString() {
         if (hole[0] == null || hole[1] == null) {
-            throw new RuntimeException("No cards in hole");
+            return "";
         } else {
             return hole[0] + ", " + hole[1];
         }
@@ -143,11 +146,18 @@ public class Player {
         this.requiredBet = requiredBet;
     }
 
-    //must be adapted to mvc
-    public Turn playTurn(TurnNotification t, PokerController controller) {
-        Turn turn = controller.handleTurnNotification(t);
-        this.chips -= turn.getBetAmount();
-        return turn;
+    @Async
+    public Turn playTurn(TurnNotification t, PokerController controller) throws ExecutionException, InterruptedException {
+        Future<Turn> turn = controller.handleTurnNotification(t);
+        while(true){
+            if(turn.isDone()){
+                this.chips -= turn.get().getBetAmount();
+                return turn.get();
+            } else {
+                System.out.println("Continue doing something else. ");
+                Thread.sleep(200);
+            }
+        }
     }
 
     public void receiveWinnings(int amount){
@@ -155,7 +165,7 @@ public class Player {
     }
 
     public void clearHole(){
-        hole = null;
+        hole = new Card[] {null,null};
     }
 
 }
