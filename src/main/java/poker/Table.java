@@ -126,12 +126,17 @@ public class Table {
     }
 
     public void addPlayer(Player p){
-        playerBets.put(p,0);
         if(round != ROUND.INTERIM){
             playersInRound.put(p,false);
         } else {
             playersInRound.put(p, true);
+            playerBets.put(p,0);
         }
+    }
+
+    public void removePlayer(Player p){
+        playersInRound.remove(p);
+        playerBets.remove(p);
     }
 
     public Player getPlayerFromName(String name){
@@ -141,6 +146,15 @@ public class Table {
             }
         }
         return null;
+    }
+
+    public Table resetTable(){
+        Table newTable = new Table();
+        for(Player p : this.playersInRound.keySet()){
+            newTable.playersInRound.put(p,true);
+            newTable.playerBets.put(p,0);
+        }
+        return newTable;
     }
 
 }

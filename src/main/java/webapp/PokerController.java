@@ -4,7 +4,6 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.AsyncResult;
 import poker.*;
 
-import javax.annotation.PostConstruct;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -20,50 +19,61 @@ public class PokerController {
     public String winnerInfo;
 
     @Async
-    public String startGame() {
+    public void startGame() {
         System.out.println("startgame");
         table = new Table();
-        List<Player> playerList = new LinkedList<>();
+        table.setRound(Table.ROUND.INTERIM);
+/*        List<Player> playerList = new LinkedList<>();
         playerList.add(new Player("John", 250));
         playerList.add(new Player("Bob", 250));
         playerList.add(new Player("Carl", 250));
         playerList.add(new Player("Joe", 250));
-        addPlayers(playerList);
-        try {
-            startRound();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return "";
-    }
-
-    public void addPlayers(List<Player> players) {
-        for (Player p : players) {
+        for (Player p : playerList) {
             table.addPlayer(p);
+        }*/
+        while(true){
+            if(table.getRound() == Table.ROUND.INTERIM) {
+                try {
+                    startRound();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
     }
 
-    public int startRound() throws ExecutionException, InterruptedException {
-        table.setDeck(new Deck());
-        table.setCommonCards(new ArrayList<>());
+    public void addPlayer(Player p){
+        table.addPlayer(p);
+    }
+
+    public void removePlayer(Player p){
+        table.removePlayer(p);
+    }
+
+    public void startRound() throws ExecutionException, InterruptedException {
+        System.out.println("Waiting for players");
+        while(table.getPlayersInRound().size() < 2){
+            Thread.sleep(1000);
+        }
+        System.out.println("Starting");
+
+        table = table.resetTable();
         for(Player p : table.getPlayersInRound().keySet()){
             p.clearHole();
-        }
-        table.setPotSize(0);
-        table.setWinner(null);
-        table.setRound(Table.ROUND.PREFLOP);
-        System.out.println("Start round");
-        for (Map.Entry<Player, Boolean> entry : table.getPlayersInRound().entrySet()) {
-            entry.setValue(true);
         }
         table.setDealerIndex(table.getDealerIndex() + 1);
         table.setCurrentPlayerIndex(table.getDealerIndex()+1);
         Player[] players = table.getPlayerBets().keySet().toArray(new Player[0]);
+
         //Tell player left of dealer he may fold or post the small blind
         Turn lastTurn = new Turn(null, null, 0);
 
         while (players.length > 0) {
-            players[(table.getDealerIndex() + 1) % players.length].setRequiredBet(table.getSmallBlind());
             lastTurn = players[(table.getDealerIndex() + 1) % players.length].playTurn(
                     new TurnNotification(Arrays.asList(Turn.PlayerAction.FOLD, CALL),
                             0, table.getSmallBlind(), players[(table.getDealerIndex() + 1) % players.length]), this);
@@ -82,46 +92,44 @@ public class PokerController {
             }
         }
         if (players.length == 0) {
-            return 0;
+            return;
         }
         receivePlayerTurn(lastTurn);
-        players[(table.getDealerIndex() + 2) % players.length].setRequiredBet(table.getBigBlind());
         lastTurn = players[(table.getDealerIndex() + 2) % players.length].playTurn(
                 new TurnNotification(Arrays.asList(Turn.PlayerAction.FOLD, CALL),
                         0, table.getBigBlind(), players[(table.getDealerIndex() + 2) % players.length]), this);
 
         for (Player p : players) {
             p.drawHole(table.getDeck());
-            System.out.println(p.getName() + ", your hand is: " + p.getHoleAsString() + ". You have " + p.getChips() + " chips.");
         }
 
         receivePlayerTurn(lastTurn);
 
-        System.out.println("POT AMOUNT: " + table.getPotSize());
 
         table.setCurrentPlayerIndex(table.getDealerIndex() + 3);
-        lastTurn = players[table.getCurrentPlayerIndex() % players.length].playTurn(
-                new TurnNotification(Arrays.asList(Turn.PlayerAction.FOLD, CALL, Turn.PlayerAction.RAISE),
-                        table.getPlayerBets().get(players[(table.getCurrentPlayerIndex() - 1) % players.length]), 0, players[table.getCurrentPlayerIndex() % players.length]), this);
-        receivePlayerTurn(lastTurn);
-
+        if(players.length > 2) {
+            lastTurn = players[table.getCurrentPlayerIndex() % players.length].playTurn(
+                    new TurnNotification(Arrays.asList(Turn.PlayerAction.FOLD, CALL, Turn.PlayerAction.RAISE),
+                            table.getPlayerBets().get(players[(table.getCurrentPlayerIndex() - 1) % players.length]), 0, players[table.getCurrentPlayerIndex() % players.length]), this);
+            receivePlayerTurn(lastTurn);
+        }
+        System.out.println("yeet");
         winnerInfo = "Winner: " + table.getWinner().getName() + " with a " + handTypes[table.getWinner().bestHand(table.getCommonCards().toArray(new Card[0])) - 1];
 
-        System.out.println("Winner: " + table.getWinner().getName() + " with a " + handTypes[table.getWinner().bestHand(table.getCommonCards().toArray(new Card[0])) - 1]);
         table.getWinner().receiveWinnings(table.getPotSize());
 
-        for (Player p : players) {
-            System.out.println(p.getName() + ", your hand was: " + p.getHoleAsString() + ". You now have " + p.getChips() + " chips.");
-        }
+
         Thread.sleep(10000);
-        return 1;
     }
 
     @Async
     private void receivePlayerTurn(Turn t) throws ExecutionException, InterruptedException {
-        //note: fold needs to remove you from lists and set you to not playing
-        //need to check if all players but one have folded
-        //if so, end the game
+        if(t.getBetAmount() > t.getPlayer().getChips()){
+            throw new IllegalArgumentException();
+        }
+
+        //TODO: end game if all players but one fold
+
         System.out.println("ROUND: " + table.getRound());
         table.setPotSize(table.getPotSize() + t.getBetAmount());
         if (t.getBetAmount() > 0) {
@@ -139,7 +147,6 @@ public class PokerController {
             }
         }
         Player[] players = nonFoldedPlayers.toArray(new Player[0]);
-        //Player[] players = playersInRound.keySet().toArray(new Player[0]);
         table.setCurrentPlayerIndex(table.getCurrentPlayerIndex() + 1);
 
         //go to next round once the dealer plays his turn

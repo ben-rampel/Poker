@@ -18,7 +18,6 @@ public class Player {
     protected Card[] hole;
     private final String name;
     private int chips;
-    private int requiredBet;
     private TurnNotification myTurn;
 
     public Player(String name, int startingChips) {
@@ -136,14 +135,6 @@ public class Player {
 
         }
         return bestHandValue;
-    }
-
-    public int getRequiredBet() {
-        return requiredBet;
-    }
-
-    public void setRequiredBet(int requiredBet) {
-        this.requiredBet = requiredBet;
     }
 
     @Async
