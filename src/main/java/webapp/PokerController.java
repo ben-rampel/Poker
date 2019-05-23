@@ -52,6 +52,9 @@ public class PokerController {
     }
 
     public void removePlayer(Player p){
+        if(currentTurnNotification.getPlayer() == p){
+            currentTurn = new Turn(p, Turn.PlayerAction.FOLD, 0);
+        }
         table.removePlayer(p);
     }
 
