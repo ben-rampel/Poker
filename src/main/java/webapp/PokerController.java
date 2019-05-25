@@ -9,6 +9,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 import static poker.Turn.PlayerAction.CALL;
+import static poker.Turn.PlayerAction.FOLD;
 import static poker.utils.handTypes;
 
 public class PokerController {
@@ -82,6 +83,14 @@ public class PokerController {
                             0, table.getSmallBlind(), players[(table.getDealerIndex() + 1) % players.length]), this);
             if (lastTurn.getAction() == Turn.PlayerAction.FOLD) {
                 table.getPlayersInRound().put(lastTurn.getPlayer(), false);
+                table.getPlayerBets().remove(lastTurn.getPlayer());
+                if(table.getPlayerBets().size() < 2){
+                    Player player = table.getPlayerBets().keySet().toArray(new Player[0])[0];
+                    winnerInfo = player + " mucks";
+                    table.setRound(Table.ROUND.INTERIM);
+                    table.setWinner(player);
+                    return;
+                }
                 List<Player> nonFoldedPlayers = new ArrayList<>();
                 for (Player p : table.getPlayersInRound().keySet()) {
                     if (table.getPlayersInRound().get(p)) {
@@ -97,6 +106,8 @@ public class PokerController {
         if (players.length == 0) {
             return;
         }
+        //Big Blind logic
+        //TODO make it go to the next person if the big blind folds like how the small blind currently works
         receivePlayerTurn(lastTurn);
         lastTurn = players[(table.getDealerIndex() + 2) % players.length].playTurn(
                 new TurnNotification(Arrays.asList(Turn.PlayerAction.FOLD, CALL),
@@ -127,6 +138,7 @@ public class PokerController {
 
     @Async
     private void receivePlayerTurn(Turn t) throws ExecutionException, InterruptedException {
+
         if(t.getBetAmount() > t.getPlayer().getChips()){
             throw new IllegalArgumentException();
         }
@@ -141,6 +153,13 @@ public class PokerController {
         if (t.getAction() == Turn.PlayerAction.FOLD) {
             table.getPlayerBets().remove(t.getPlayer());
             table.getPlayersInRound().put(t.getPlayer(), false);
+            if(table.getPlayerBets().size() < 2){
+                Player player = table.getPlayerBets().keySet().toArray(new Player[0])[0];
+                winnerInfo = player + " mucks";
+                table.setRound(Table.ROUND.INTERIM);
+                table.setWinner(player);
+                return;
+            }
         }
         System.out.println("TABLE RECEIVED ACTION OF\n\t " + t.toString());
         List<Player> nonFoldedPlayers = new ArrayList<>();
