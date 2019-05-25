@@ -30,6 +30,24 @@
         </div>
     </div>
 </div>
+<div class="modal" id="errorModal" role="dialog" tabindex="-1">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Error</h5>
+                <button aria-label="Close" class="close" data-dismiss="modal" type="button">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p id="errorText"></p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" data-dismiss="modal" type="button">Ok</button>
+            </div>
+        </div>
+    </div>
+</div>
 <div class="modal" id="usernameSelect" role="dialog" tabindex="-1">
     <div class="modal-dialog" role="document">
         <form>
@@ -42,6 +60,9 @@
             </div>
             <div class="modal-body">
                 <p>
+                <div class="alert alert-warning" id="usernameWarning" role="alert">
+                    Username in use!
+                </div>
                 <div class="input-group mb-3">
                     <div class="input-group-prepend">
                         <span class="input-group-text" id="basic-addon3">Name: </span>
@@ -96,12 +117,13 @@
 
             <div class="commonCards">
                 <span ng-repeat="card in currentGameData.commonCards">
-                    <img class="cardimg" src="{{(currentGameData.personalCards[0] != null) ? $ctrl.getCardUrl(card.rank,card.suit) : ''}}"/>
+                    <img class="cardimg" src="{{$ctrl.getCardUrl(card.rank,card.suit)}}"/>
                 </span>
             </div>
 
             <div class="potAmount">
-                <p ng-bind="currentGameData.pot"></p>
+                <span>Pot: </span>
+                <span ng-bind="currentGameData.pot"></span>
             </div>
         </div>
     </div>

@@ -72,7 +72,9 @@ app.controller('controller', function ($scope, $stomp, $log, $http) {
 
             let raiseValue = $("#raiseValue").val();
             console.log(currentPlayer.chips + " " + $scope.currentGameData.turnNotification.minimumBet + " " + raiseValue);
-            if (raiseValue <= currentPlayer.chips) {
+
+            //if (raiseValue <= currentPlayer.chips) {
+            if(true) {
                 if ($scope.currentGameData.turnNotification.minimumBet === 0 || raiseValue > $scope.currentGameData.turnNotification.minimumBet) {
                     //send raise message
                     $stomp.send('/app/sendTurn', {
@@ -108,29 +110,42 @@ app.controller('controller', function ($scope, $stomp, $log, $http) {
     $scope.connectFunc = function () {
 
         console.log($scope.player);
-        $http.post('http://' + hostname + ':8080/login', $scope.player).then(function(data){console.log(data)});
-
-        $stomp
-            .connect('http://' + hostname + ':8080/socket')
-            // frame = CONNECTED headers
-            .then(function (frame) {
-                var url = '/poker/' + $scope.player;
-                var subscription = $stomp.subscribe(url, function (payload, headers, res) {
-                    $scope.currentGameData = payload;
-                    refreshBet();
-                    if ($scope.currentGameData.winner != null && $scope.displayWinner == false) {
-                        $scope.displayWinner = true;
-                        //show winner
-                        $('#winnerText').text($scope.currentGameData.winnerInfo)
-                        $('#winnerModal').modal('show')
-                    } else {
-                        $scope.displayWinner = false;
-                    }
-                    $scope.$apply();
-                    console.log(payload);
-                })
-
-            })
+        $http.post('http://' + hostname + ':8080/login', $scope.player)
+            .then(
+                function(data){
+                    //successful login
+                    console.log(data);
+                    $stomp
+                        .connect('http://' + hostname + ':8080/socket')
+                        // frame = CONNECTED headers
+                        .then(function (frame) {
+                            var url = '/poker/' + $scope.player;
+                            var subscription = $stomp.subscribe(url, function (payload, headers, res) {
+                                $scope.currentGameData = payload;
+                                refreshBet();
+                                if ($scope.currentGameData.winner != null && $scope.displayWinner === false) {
+                                    $scope.displayWinner = true;
+                                    //show winner
+                                    $('#winnerText').text($scope.currentGameData.winnerInfo);
+                                    $('#winnerModal').modal('show');
+                                } else {
+                                    $scope.displayWinner = false;
+                                }
+                                $scope.$apply();
+                                console.log(payload);
+                            })
+                            var errorSubscription = $stomp.subscribe(url + "/error", function (payload, headers, res) {
+                                $('#errorText').text(payload);
+                                $('#errorModal').modal('show');
+                            });
+                        })
+                },
+                function(data){
+                    //bad login
+                    $('#usernameSelect').modal('show');
+                    $('#usernameWarning').show();
+                    return;
+                });
     };
 
     $('#usernameSelect').modal('show')

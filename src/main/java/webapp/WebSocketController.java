@@ -37,7 +37,7 @@ import java.util.Map;
 @Controller
 
 public class WebSocketController {
-    Map<String,Player> sessionIDMap = new HashMap<>();
+    private Map<String,Player> sessionIDMap = new HashMap<>();
 
     @Autowired
     private SimpMessageSendingOperations messagingTemplate;
@@ -45,7 +45,7 @@ public class WebSocketController {
     private PokerController pokerController = new PokerController();
 
     @PostConstruct
-    public void start() throws InterruptedException {
+    public void start() {
         Thread t = new Thread(() -> {
             try {
                 pokerController.startGame();
@@ -65,6 +65,10 @@ public class WebSocketController {
         String action = (String) messageAsJSON.getJSONObject("message").get("action");
         int amount = (int) messageAsJSON.getJSONObject("message").get("betAmount");
         String player = (String) messageAsJSON.getJSONObject("message").get("player");
+
+        if(amount > pokerController.getTable().getPlayerFromName(player).getChips()){
+            messagingTemplate.convertAndSend("/poker/" + player + "/error", "\"Can't bet more than you have.\"");
+        }
 
         pokerController.setCurrentTurn(new Turn(
                 pokerController.getTable().getPlayerFromName(player),
@@ -108,7 +112,8 @@ public class WebSocketController {
 
     @MessageExceptionHandler
     public String handleException(Throwable exception) {
-        messagingTemplate.convertAndSend("/errors", exception.getMessage());
+        System.out.println(exception.getMessage());
+        //messagingTemplate.convertAndSend("/errors", exception.getMessage());
         return exception.getMessage();
     }
 
@@ -122,14 +127,6 @@ public class WebSocketController {
         }
         pokerController.addPlayer(new Player(username, 250));
         return new ResponseEntity<>(HttpStatus.OK);
-    }
-
-    @Bean
-    public WebServerFactoryCustomizer<TomcatServletWebServerFactory> tomcatCustomizer() {
-        return (tomcat) -> {
-            tomcat.addConnectorCustomizers((connector) ->
-                    ((AbstractHttp11Protocol<?>)connector.getProtocolHandler()).setRelaxedQueryChars(" "));
-        };
     }
 
     @EventListener
