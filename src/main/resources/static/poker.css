@@ -101,6 +101,9 @@
     height: 100px;
     width: 70px;
 }
+#usernameWarning {
+    display: none;
+}
 
 #css-input {
     display: inline-block;

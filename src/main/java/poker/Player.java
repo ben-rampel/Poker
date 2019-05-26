@@ -1,6 +1,7 @@
 package poker;
 
 import org.springframework.scheduling.annotation.Async;
+import webapp.BetValueException;
 import webapp.PokerController;
 
 import java.util.*;
@@ -142,6 +143,10 @@ public class Player {
         Future<Turn> turn = controller.handleTurnNotification(t);
         while(true){
             if(turn.isDone()){
+                if(t.getPlayer().getChips() - turn.get().getBetAmount() < 0){
+                    System.out.print(t.getPlayer().getChips() + " " +  turn.get().getBetAmount());
+                    throw new BetValueException(this);
+                }
                 this.chips -= turn.get().getBetAmount();
                 return turn.get();
             } else {
