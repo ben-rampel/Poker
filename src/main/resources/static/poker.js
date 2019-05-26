@@ -135,3 +135,13 @@ app.controller('controller', function ($scope, $stomp, $log, $http) {
     $('#usernameSelect').modal('show')
 
 });
+
+function loadCSS() {
+    let head = document.getElementsByTagName("HEAD")[0];
+    let cssURL = URL.createObjectURL(document.getElementById("css-file").files[0]);
+    let link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.type = "text/css";
+    link.href = cssURL;
+    head.appendChild(link);
+}

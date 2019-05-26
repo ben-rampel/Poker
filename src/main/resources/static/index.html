@@ -94,6 +94,12 @@
                 </div>
             </div>
 
+            <!-- change themes -->
+            <div id="css-input">
+                <input id="css-file" type="file"/>
+                <button type="button" onclick="loadCSS();">Change Theme!</button>
+            </div>
+
             <div class="commonCards">
                 <span ng-repeat="card in currentGameData.commonCards">
                     <img class="cardimg" src="{{(currentGameData.personalCards[0] != null) ? $ctrl.getCardUrl(card.rank,card.suit) : ''}}"/>
