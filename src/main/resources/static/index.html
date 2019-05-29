@@ -12,6 +12,22 @@
 </head>
 
 <body ng-app="poker" ng-controller="controller as $ctrl">
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <a class="navbar-brand" href="#">Poker</a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav">
+            <li class="nav-item active">
+                <a class="nav-link" href="/">Play<span class="sr-only">(current)</span></a>
+            </li>
+            <li class="nav-item" >
+                <a class="nav-link" href="/signUp">Sign Up</a>
+            </li>
+        </ul>
+    </div>
+</nav>
 <div class="modal" id="winnerModal" role="dialog" tabindex="-1">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
@@ -53,22 +69,27 @@
         <form>
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Enter username</h5>
+                <h5 class="modal-title">Login</h5>
                 <button aria-label="Close" class="close" data-dismiss="modal" type="button">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
             <div class="modal-body">
                 <p>
-                <div class="alert alert-warning" id="usernameWarning" role="alert">
-                    Username in use!
+                <div class="alert alert-warning" id="loginWarning" role="alert">
+                    Invalid login
                 </div>
                 <div class="input-group mb-3">
                     <div class="input-group-prepend">
-                        <span class="input-group-text" id="basic-addon3">Name: </span>
+                        <span class="input-group-text" id="usernameDesc">Name: </span>
                     </div>
-                    <input aria-describedby="basic-addon3" class="form-control" id="basic-url" ng-model="player"
+                    <input aria-describedby="usernameDesc" class="form-control"  ng-model="player"
                            type="text">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text" id="passwordDesc">Password: </span>
+                    </div>
+                    <input aria-describedby="passwordDesc" class="form-control" ng-model="password"
+                           type="password">
                 </div>
                 </p>
             </div>
@@ -80,9 +101,9 @@
         </form>
     </div>
 </div>
-<div>
+<div class="container">
     <div class="game">
-        <div class="dashboard container-fluid">
+        <div class="dashboard">
             <h5>Player: {{player}}</h5>
             <p ng-if="currentGameData.personalCards[0] != null">Your Cards:</p>
             <p ng-if="currentGameData.personalCards[0] != null" ng-repeat="card in currentGameData.personalCards">

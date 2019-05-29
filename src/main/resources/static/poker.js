@@ -31,6 +31,7 @@ app.controller('controller', function ($scope, $stomp, $log, $http) {
     };
 
     $scope.player = "No one";
+    $scope.password = "";
     $scope.currentGameData = {};
 
     let refreshBet = function () {
@@ -110,7 +111,7 @@ app.controller('controller', function ($scope, $stomp, $log, $http) {
     $scope.connectFunc = function () {
 
         console.log($scope.player);
-        $http.post('http://' + hostname + ':8080/login', $scope.player)
+        $http.post('http://' + hostname + ':8080/login', [$scope.player, $scope.password])
             .then(
                 function(data){
                     //successful login
@@ -143,13 +144,13 @@ app.controller('controller', function ($scope, $stomp, $log, $http) {
                 function(data){
                     //bad login
                     $('#usernameSelect').modal('show');
-                    $('#usernameWarning').show();
+                    $('#loginWarning').show();
                     return;
                 });
     };
 
-    $('#usernameSelect').modal('show')
-
+    $('#usernameSelect').modal('show');
+    $('#loginWarning').hide();
 });
 
 function loadCSS() {

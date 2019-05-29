@@ -151,7 +151,7 @@ public class PokerController {
     }
 
     @Async
-    private void receivePlayerTurn(Turn t) throws ExecutionException, InterruptedException {
+    public void receivePlayerTurn(Turn t) throws ExecutionException, InterruptedException {
         List<Player> nonFoldedPlayers = nonFoldedPlayers();
 
         //TODO: end game if all players but one fold
@@ -179,7 +179,7 @@ public class PokerController {
 
         Player[] players = nonFoldedPlayers().toArray(new Player[0]);
         //if(t.getAction() != FOLD)
-            table.setCurrentPlayerIndex(table.getCurrentPlayerIndex() + 1);
+        table.setCurrentPlayerIndex(table.getCurrentPlayerIndex() + 1);
 
         //go to next round once the dealer plays his turn
         if (table.getCurrentPlayerIndex() == table.getDealerIndex() + players.length + 1) {

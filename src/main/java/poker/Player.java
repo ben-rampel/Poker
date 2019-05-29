@@ -1,6 +1,5 @@
 package poker;
 
-import org.springframework.scheduling.annotation.Async;
 import webapp.BetValueException;
 import webapp.PokerController;
 
@@ -19,7 +18,6 @@ public class Player {
     protected Card[] hole;
     private final String name;
     private int chips;
-    private TurnNotification myTurn;
 
     public Player(String name, int startingChips) {
         this.name = name;
@@ -138,7 +136,6 @@ public class Player {
         return bestHandValue;
     }
 
-    @Async
     public Turn playTurn(TurnNotification t, PokerController controller) throws ExecutionException, InterruptedException {
         Future<Turn> turn = controller.handleTurnNotification(t);
         while(true){
