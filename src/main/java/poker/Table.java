@@ -2,10 +2,10 @@ package poker;
 
 import java.util.*;
 
-import static poker.utils.handTypes;
 
 public class Table {
     public enum ROUND {PREFLOP, FLOP, TURN, RIVER, INTERIM}
+
     private ROUND round;
     private Deck deck;
     //Map the list of playerBets to their current bet in the round
@@ -103,13 +103,13 @@ public class Table {
         this.winner = winner;
     }
 
-    public Table(List<Player> players){
+    public Table(List<Player> players) {
         playerBets = new HashMap<>();
         playersInRound = new HashMap<>();
-        if(players != null) {
+        if (players != null) {
             for (Player player : players) {
                 playerBets.put(player, 0);
-                playersInRound.put(player,true);
+                playersInRound.put(player, true);
             }
         }
         dealerIndex = 0;
@@ -121,38 +121,38 @@ public class Table {
         bigBlind = 2;
     }
 
-    public Table(){
+    public Table() {
         this(null);
     }
 
-    public void addPlayer(Player p){
-        if(round != ROUND.INTERIM){
-            playersInRound.put(p,false);
+    public void addPlayer(Player p) {
+        if (round != ROUND.INTERIM) {
+            playersInRound.put(p, false);
         } else {
             playersInRound.put(p, true);
-            playerBets.put(p,0);
+            playerBets.put(p, 0);
         }
     }
 
-    public void removePlayer(Player p){
+    public void removePlayer(Player p) {
         playersInRound.remove(p);
         playerBets.remove(p);
     }
 
-    public Player getPlayerFromName(String name){
-        for(Player p : playersInRound.keySet()){
-            if(name.equals(p.getName()) || name.equals(p.getName().toLowerCase())){
+    public Player getPlayerFromName(String name) {
+        for (Player p : playersInRound.keySet()) {
+            if (name.equals(p.getName()) || name.equals(p.getName().toLowerCase())) {
                 return p;
             }
         }
         return null;
     }
 
-    public Table resetTable(){
+    public Table resetTable() {
         Table newTable = new Table();
-        for(Player p : this.playersInRound.keySet()){
-            newTable.playersInRound.put(p,true);
-            newTable.playerBets.put(p,0);
+        for (Player p : this.playersInRound.keySet()) {
+            newTable.playersInRound.put(p, true);
+            newTable.playerBets.put(p, 0);
         }
         return newTable;
     }

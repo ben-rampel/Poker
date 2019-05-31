@@ -3,16 +3,12 @@ package webapp;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.AsyncResult;
 import poker.*;
-import poker.handComparators.RankOrderComparator;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 import static poker.Turn.PlayerAction.*;
-import static poker.utils.handTypes;
 
 public class PokerController {
     public String winnerInfo;
@@ -132,7 +128,7 @@ public class PokerController {
 
 
         if (nonFoldedPlayers().size() > 1) {
-            winnerInfo = "Winner: " + table.getWinner().getName() + " with a " + handTypes[table.getWinner().bestHand(table.getCommonCards().toArray(new Card[0])) - 1];
+            winnerInfo = "Winner: " + table.getWinner().getName() + " with a " + table.getWinner().bestHand(table.getCommonCards().toArray(new Card[0]));
         }
         table.getWinner().receiveWinnings(table.getPotSize());
 
@@ -205,25 +201,11 @@ public class PokerController {
                 //showdown time -- implement end of game logic
                 case RIVER:
                     table.setRound(Table.ROUND.INTERIM);
-                    int bestHand = 10;
-                    for (Player player : players) {
-                        if (player.bestHand(table.getCommonCards().toArray(new Card[0])) < bestHand) {
-                            bestHand = player.bestHand(table.getCommonCards().toArray(new Card[0]));
-                            table.setWinner(player);
-                        }
+                    TreeMap<Hand, Player> bestHandMap = new TreeMap<>();
+                    for(Player p : nonFoldedPlayers()){
+                        bestHandMap.put(p.bestHand(table.getCommonCards().toArray(new Card[0])),p);
                     }
-                    if (bestHand == 10) {
-                        Card bestRank = new Card(Card.Rank.two, Card.Suit.hearts);
-                        RankOrderComparator comp = new RankOrderComparator();
-                        for (Player p : players) {
-                            for (Card c : p.getHole()) {
-                                if (comp.compare(c, bestRank) >= 0) {
-                                    bestRank = c;
-                                    table.setWinner(p);
-                                }
-                            }
-                        }
-                    }
+                    table.setWinner(bestHandMap.lastEntry().getValue());
                     break;
             }
             if (!(table.getRound() == Table.ROUND.INTERIM)) {

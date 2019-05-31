@@ -55,85 +55,13 @@ public class Player {
         if (this.chips == 0) this.chips = chips;
     }
 
-    public int bestHand(Card[] commons) {
+    public Hand bestHand(Card[] commons) {
         List<Card> allCards = new ArrayList<>();
         allCards.addAll(Arrays.asList(getHole()));
         allCards.addAll(Arrays.asList(commons));
-
-        List<List<Card>> hands = getAllHands(allCards);
-        int bestHandValue = 10;
-        for (List<Card> hand : hands) {
-            //Create map of the number of each rank in the hand
-            Map<Card.Rank, Integer> counts = new HashMap<>();
-            for (Card.Rank r : Card.Rank.values()) {
-                for (Card c : hand) {
-                    if (c.getRank() == r) {
-                        if (counts.containsKey(r)) {
-                            counts.put(r, counts.get(r) + 1);
-                        } else {
-                            counts.put(r, 1);
-                        }
-                    }
-                }
-            }
-            //Test royal flush
-            for (Card.Suit s : Card.Suit.values()) {
-                if (containsCard(hand, Card.Rank.ace, s) && containsCard(hand, Card.Rank.king, s) && containsCard(hand, Card.Rank.queen, s) && containsCard(hand, Card.Rank.jack, s) && containsCard(hand, Card.Rank.ten, s)) {
-                    return 1;
-                }
-            }
-            //Test straight flush
-            if (isStraight(hand) && isFlush(hand)) {
-                if (2 < bestHandValue) bestHandValue = 2;
-            }
-            //test 4 of a kind
-            for (Card.Rank r : counts.keySet()) {
-                if (counts.get(r) >= 4) {
-                    if (3 < bestHandValue) bestHandValue = 3;
-                }
-            }
-            //test full house
-            boolean trips = false, pair = false;
-            for (Card.Rank r : counts.keySet()) {
-                if (counts.get(r) == 3) {
-                    trips = true;
-                }
-                if (counts.get(r) == 2) {
-                    pair = true;
-                }
-            }
-            if (trips && pair) {
-                if (4 < bestHandValue) bestHandValue = 4;
-            }
-            //test flush
-            if (isFlush(hand)) {
-                if (5 < bestHandValue) bestHandValue = 5;
-            }
-            //test straight
-            if (isStraight(hand)) {
-                if (6 < bestHandValue) bestHandValue = 6;
-            }
-            //test trips
-            if (trips) {
-                if (7 < bestHandValue) bestHandValue = 7;
-            }
-            //test 2 pair
-            int pairCount = 0;
-            for (Card.Rank r : counts.keySet()) {
-                if (counts.get(r) == 2) {
-                    pairCount++;
-                }
-            }
-            if (pairCount == 2) {
-                if (8 < bestHandValue) bestHandValue = 8;
-            }
-            //test pair
-            if (pair) {
-                if (9 < bestHandValue) bestHandValue = 9;
-            }
-
-        }
-        return bestHandValue;
+        List<Hand> hands = getAllHands(allCards);
+        Collections.sort(hands);
+        return hands.get(hands.size()-1);
     }
 
     public Turn playTurn(TurnNotification t, PokerController controller) throws ExecutionException, InterruptedException {
