@@ -1,6 +1,6 @@
 # Texas Hold'em
 
-[logo]: https://github.com/brampel/Poker/blob/dev/pokerscreencap.PNG?raw=true "poker"
+![alt text](https://github.com/brampel/Poker/blob/dev/pokerscreencap.PNG "Logo Title Text 1")
 
 ## Information
 A Java application simulates a Texas Hold'em game and emits the current game state as JSON via a WebSocket connection to the web client.
