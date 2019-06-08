@@ -1,5 +1,7 @@
 # Texas Hold'em
 
+![alt text](https://github.com/brampel/Poker/blob/dev/pokerscreencap.PNG "Poker game")
+
 ## Information
 A Java application simulates a Texas Hold'em game and emits the current game state as JSON via a WebSocket connection to the web client.
 The AngularJS-based client renders the poker table and all the information the player needs and sends turn data to the server over WebSockets to advance the game.
