@@ -1,28 +1,61 @@
 package poker;
 
-import webapp.BetValueException;
-import webapp.PokerController;
-
 import java.util.*;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 
 import static poker.utils.*;
 
+/*
+ * Player
+ * Abstraction of a player in a Poker game
+ * Stores a player's game data such as name, hand (hole cards), and number of chips
+ */
 public class Player {
-    /*
-     * Player
-     * Abstraction of a player in a Poker game
-     * Stores a player's game data such as name, hand (hole cards), and number of chips
-     */
+
     protected Card[] hole;
     private final String name;
     private int chips;
+    private int bet;
+    private boolean inRound;
+    private boolean isDealer;
+    private String websocketsSession;
 
     public Player(String name, int startingChips) {
         this.name = name;
         chips = startingChips;
         hole = new Card[2];
+        inRound = true;
+    }
+
+    public void bet(int amt) {
+        if (amt <= chips) {
+            chips -= amt;
+        } else {
+            throw new IllegalStateException("player bet more than he has");
+        }
+    }
+
+    public boolean isDealer() {
+        return isDealer;
+    }
+
+    public void setDealer(boolean dealer) {
+        isDealer = dealer;
+    }
+
+    public int getBet() {
+        return bet;
+    }
+
+    public void setBet(int bet) {
+        this.bet = bet;
+    }
+
+    public boolean isInRound() {
+        return inRound;
+    }
+
+    public void setInRound(boolean inRound) {
+        this.inRound = inRound;
     }
 
     public String getName() {
@@ -39,14 +72,6 @@ public class Player {
         return hole;
     }
 
-    public String getHoleAsString() {
-        if (hole[0] == null || hole[1] == null) {
-            return "";
-        } else {
-            return hole[0] + ", " + hole[1];
-        }
-    }
-
     public int getChips() {
         return chips;
     }
@@ -61,32 +86,22 @@ public class Player {
         allCards.addAll(Arrays.asList(commons));
         List<Hand> hands = getAllHands(allCards);
         Collections.sort(hands);
-        return hands.get(hands.size()-1);
+        return hands.get(hands.size() - 1);
     }
 
-    public Turn playTurn(TurnNotification t, PokerController controller) throws ExecutionException, InterruptedException {
-        Future<Turn> turn = controller.handleTurnNotification(t);
-        while(true){
-            if(turn.isDone()){
-                if(t.getPlayer().getChips() - turn.get().getBetAmount() < 0){
-                    System.out.print(t.getPlayer().getChips() + " " +  turn.get().getBetAmount());
-                    throw new BetValueException(this);
-                }
-                this.chips -= turn.get().getBetAmount();
-                return turn.get();
-            } else {
-                System.out.println("Continue doing something else. ");
-                Thread.sleep(200);
-            }
-        }
-    }
-
-    public void receiveWinnings(int amount){
+    public void receiveWinnings(int amount) {
         chips += amount;
     }
 
-    public void clearHole(){
-        hole = new Card[] {null,null};
+    public void clearHole() {
+        hole = new Card[]{null, null};
     }
 
+    public String getWebsocketsSession() {
+        return websocketsSession;
+    }
+
+    public void setWebsocketsSession(String websocketsSession) {
+        this.websocketsSession = websocketsSession;
+    }
 }

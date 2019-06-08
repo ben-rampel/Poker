@@ -21,7 +21,7 @@ public class Deck implements Iterator<Card> {
         deck = new ArrayList<>();
         for (Card.Rank r : Card.Rank.values()) {
             for (Card.Suit s : Card.Suit.values()) {
-                if(r != Card.Rank.aceLow) {
+                if (r != Card.Rank.aceLow) {
                     deck.add(new Card(r, s));
                 }
             }

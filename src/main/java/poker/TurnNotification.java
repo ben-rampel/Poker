@@ -30,7 +30,27 @@ public class TurnNotification {
         return requiredBet;
     }
 
-    public Player getPlayer(){
+    public Player getPlayer() {
         return player;
+    }
+
+    public void setPlayer(Player player) {
+        this.player = player;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder(player.getName() + " may ");
+        for (int i = 0; i < options.size(); i++) {
+            Turn.PlayerAction a = options.get(i);
+            builder.append(a);
+            switch (a) {
+                case RAISE:
+                case CALL:
+                    builder.append(" ").append((minimumBet > 0) ? minimumBet : requiredBet);
+            }
+            if (i < options.size() - 1) builder.append(", ");
+        }
+        return builder.toString();
     }
 }

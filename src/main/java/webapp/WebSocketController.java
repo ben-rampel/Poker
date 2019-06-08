@@ -2,8 +2,8 @@ package webapp;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.catalina.User;
 import org.json.JSONObject;
+import org.springframework.messaging.MessageHeaders;
 import org.springframework.ui.Model;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.EventListener;
@@ -22,7 +22,6 @@ import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 import org.springframework.web.socket.messaging.SessionSubscribeEvent;
 import poker.Card;
 import poker.Player;
-import poker.Table;
 import poker.Turn;
 
 import javax.annotation.PostConstruct;
@@ -30,36 +29,44 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 @EnableScheduling
 @EnableAsync
 @Controller
 
 public class WebSocketController {
-    private Map<String,Player> sessionIDMap = new HashMap<>();
+    private SimpMessageSendingOperations messagingTemplate;
+    private TableController tableController;
+    private Future<Player> winner;
 
     @Autowired
-    private SimpMessageSendingOperations messagingTemplate;
-
-    private PokerController pokerController = new PokerController();
+    public WebSocketController(SimpMessageSendingOperations messagingTemplate, TableController tableController) {
+        this.messagingTemplate = messagingTemplate;
+        this.tableController = tableController;
+    }
 
     @PostConstruct
     public void start() {
-        Thread t = new Thread(() -> {
-            try {
-                pokerController.startGame();
-                Thread.sleep(10000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
+        Thread gameThread = new Thread(() -> {
+            while (true) {
+                try {
+                    winner = tableController.startRound();
+                    while (!winner.isDone()) {
+                        Thread.sleep(1000);
+                    }
+                    winner.get().receiveWinnings(tableController.getTable().getPotSize());
+                    Thread.sleep(6000);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
         });
-        t.start();
+        gameThread.start();
     }
 
     @MessageMapping("/sendTurn")
@@ -71,12 +78,12 @@ public class WebSocketController {
         int amount = (int) messageAsJSON.getJSONObject("message").get("betAmount");
         String player = (String) messageAsJSON.getJSONObject("message").get("player");
 
-        if(amount > pokerController.getTable().getPlayerFromName(player).getChips()){
+        if (amount > tableController.getTable().getPlayerFromName(player).getChips()) {
             messagingTemplate.convertAndSend("/poker/" + player + "/error", "\"Can't bet more than you have.\"");
         }
 
-        pokerController.setCurrentTurn(new Turn(
-                pokerController.getTable().getPlayerFromName(player),
+        tableController.receiveTurn(new Turn(
+                tableController.getTable().getPlayerFromName(player),
                 Turn.PlayerAction.valueOf(action.toUpperCase()),
                 amount));
     }
@@ -86,27 +93,31 @@ public class WebSocketController {
         GameData currentGameData = new GameData();
         ObjectMapper mapper = new ObjectMapper();
 
-        currentGameData.setPot(pokerController.getTable().getPotSize());
-        currentGameData.setCommonCards(pokerController.getTable().getCommonCards().toArray(new Card[0]));
+        currentGameData.setPot(tableController.getTable().getPotSize());
+        currentGameData.setCommonCards(tableController.getTable().getCommonCards().toArray(new Card[0]));
         currentGameData.setPersonalCards(p.getHole());
-        currentGameData.setPlayers(pokerController.getTable().getPlayersInRound().keySet().toArray(new Player[0]));
-        for (Map.Entry<Player, Boolean> entry : pokerController.getTable().getPlayersInRound().entrySet()) {
-            foldedMap.put(entry.getKey().getName(), entry.getValue());
+        currentGameData.setPlayers(tableController.getTable().getPlayers().toArray(new Player[0]));
+        for (Player player : tableController.getTable().getPlayers()) {
+            foldedMap.put(player.getName(), player.isInRound());
         }
         currentGameData.setFolded(foldedMap);
-        if (pokerController.getCurrentTurnNotification() != null && p == pokerController.getCurrentTurnNotification().getPlayer()) {
-            currentGameData.setTurnNotification(pokerController.getCurrentTurnNotification());
+        if (tableController.getTurnNotification() != null && p == tableController.getTurnNotification().getPlayer()) {
+            currentGameData.setTurnNotification(tableController.getTurnNotification());
         }
-        if (pokerController.getTable().getWinner() != null) {
-            currentGameData.setWinner(pokerController.getTable().getWinner());
-            currentGameData.setWinnerInfo(pokerController.winnerInfo);
+        try {
+            if (winner.isDone()) {
+                currentGameData.setWinner(winner.get());
+                currentGameData.setWinnerInfo(tableController.getTable().getWinnerInfo());
+            }
+        } catch (InterruptedException | ExecutionException | NullPointerException e) {
+            e.printStackTrace();
         }
         messagingTemplate.convertAndSend("/poker/" + p.getName(), mapper.writeValueAsString(currentGameData));
     }
 
     @Scheduled(fixedRate = 1000)
     public void refreshAllPlayers() {
-        for (Player p : pokerController.getTable().getPlayersInRound().keySet()) {
+        for (Player p : tableController.getTable().getPlayers()) {
             try {
                 sendGameData(p);
             } catch (Exception e) {
@@ -123,18 +134,21 @@ public class WebSocketController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity login(@RequestBody String[] credentials){
+    public ResponseEntity login(@RequestBody String[] credentials) {
         String username = credentials[0];
         String password = credentials[1];
-        for(Player p : pokerController.getTable().getPlayersInRound().keySet()){
-            if(p.getName().equals(username)) return new ResponseEntity(HttpStatus.BAD_REQUEST);
+        for (Player p : tableController.getTable().getPlayers()) {
+            if (p.getName().equals(username)) return new ResponseEntity(HttpStatus.BAD_REQUEST);
         }
-        if(UserDatabaseUtils.login(username, password)){
-            if(UserDatabaseUtils.getBalance(username) >= 250) {
-                pokerController.addPlayer(new Player(username, 250));
+        if (UserDatabaseUtils.login(username, password)) {
+            if (UserDatabaseUtils.getBalance(username) >= 250) {
+                tableController.getTable().addPlayer(new Player(username, 250));
                 UserDatabaseUtils.withdraw(username, 250);
             } else {
-                pokerController.addPlayer(new Player(username, 0));
+                tableController.getTable().addPlayer(new Player(username, 0));
+            }
+            if(tableController.getTable().activePlayers().size() > 2) {
+                tableController.getTable().getPlayerFromName(username).setInRound(false);
             }
             return new ResponseEntity<>(HttpStatus.OK);
         }
@@ -142,15 +156,15 @@ public class WebSocketController {
     }
 
     @GetMapping("/signUp")
-    public String signUp(Model model){
+    public String signUp(Model model) {
         model.addAttribute("loggedIn", false);
         model.addAttribute("signupform", new SignUpForm());
         return "signUp";
     }
 
     @GetMapping("/signUp/callback")
-    public String signUpCallBack(@RequestParam(required = false) String code, Model model){
-        if(code != null){
+    public String signUpCallBack(@RequestParam(required = false) String code, Model model) {
+        if (code != null) {
             model.addAttribute("loggedIn", true);
             model.addAttribute("discordCode", code);
             model.addAttribute("signupform", new SignUpForm());
@@ -159,7 +173,7 @@ public class WebSocketController {
     }
 
     @PostMapping("/signUp/callback")
-    public String signUpSubmit(@ModelAttribute SignUpForm data, Model model){
+    public String signUpSubmit(@ModelAttribute SignUpForm data, Model model) {
         String code = data.getDiscordCode();
         //System.out.println("code: " + code);
         try {
@@ -179,7 +193,7 @@ public class WebSocketController {
                 content.append(inputLine);
             }
             in.close();
-           // System.out.println(content);
+            // System.out.println(content);
             JSONObject tokenObject = new JSONObject(content.toString());
             String token = (String) tokenObject.get("access_token");
             url = new URL("https://discordapp.com/api/users/@me");
@@ -188,7 +202,6 @@ public class WebSocketController {
             userDataCon.setRequestProperty("Authorization", "Bearer " + token);
             in = new BufferedReader(
                     new InputStreamReader(userDataCon.getInputStream()));
-            inputLine = null;
             content = new StringBuffer();
             while ((inputLine = in.readLine()) != null) {
                 content.append(inputLine);
@@ -197,9 +210,8 @@ public class WebSocketController {
             //System.out.println(content);
             JSONObject userdata = new JSONObject(content.toString());
             String discordID = (String) userdata.get("id");
-            UserDatabaseUtils.register(data.getName(),data.getPassword(),discordID);
-        }
-        catch(Exception e ){
+            UserDatabaseUtils.register(data.getName(), data.getPassword(), discordID);
+        } catch (Exception e) {
             e.printStackTrace();
         }
         model.addAttribute("loggedIn", false);
@@ -209,24 +221,20 @@ public class WebSocketController {
 
     @EventListener
     public void onDisconnectEvent(SessionDisconnectEvent event) {
-        System.out.println(sessionIDMap.get(event.getSessionId()).getName());
-        UserDatabaseUtils.deposit(sessionIDMap.get(event.getSessionId()).getName(), sessionIDMap.get(event.getSessionId()).getChips());
-        pokerController.removePlayer(sessionIDMap.get(event.getSessionId()));
-/*        if(pokerController.getTable().getPlayersInRound().size() < 2 && pokerController.getTable().getRound() != Table.ROUND.INTERIM){
-            pokerController.startGame();
-        }*/
+        MessageHeaders headers = event.getMessage().getHeaders();
+        String sessionID = (String) headers.get("simpSessionId");
+        tableController.removePlayer(
+                tableController.getTable().getPlayerFromSessionID(sessionID)
+        );
     }
 
     @EventListener
     public void onSubscribeEvent(SessionSubscribeEvent event) {
-        String sessionID = event.getMessage().getHeaders().get("simpSessionId").toString();
-        String name = event.getMessage().getHeaders().get("simpDestination").toString().substring(7);
-        if(!name.contains("/")) {
-            sessionIDMap.put(sessionID, pokerController.getTable().getPlayerFromName(name));
-            System.out.println(sessionID + " " + name);
+        MessageHeaders headers = event.getMessage().getHeaders();
+        if(!((String) headers.get("simpDestination")).contains("error")){
+            String sessionID = (String) headers.get("simpSessionId");
+            String user = (((String) headers.get("simpDestination")).split("/")[2]);
+            tableController.getTable().getPlayerFromName(user).setWebsocketsSession(sessionID);
         }
- /*       if(pokerController.getTable().getPlayersInRound().size() < 2 && pokerController.getTable().getRound() != Table.ROUND.INTERIM){
-            pokerController.startGame();
-        }*/
     }
 }

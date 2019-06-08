@@ -1,6 +1,5 @@
 package tests;
 
-import org.junit.*;
 import org.junit.Test;
 import poker.Card;
 import poker.Hand;
@@ -11,13 +10,12 @@ import java.util.LinkedList;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static poker.Card.Rank.*;
 import static poker.Card.Suit.*;
 
 public class handRankingTest {
     @Test
-    public void rankTest(){
+    public void rankTest() {
         Hand FH = new Hand(Arrays.asList(
                 new Card(seven, hearts), new Card(seven, clubs), new Card(seven, diamonds), new Card(two, clubs), new Card(two, spades)
         ));
@@ -51,7 +49,10 @@ public class handRankingTest {
 
         List<Hand> unordered = new LinkedList<>(Arrays.asList(NineHC, Flush, RF, betterFH, twoPairBetter, FH, twoPairWorse));
         Collections.sort(unordered);
-        System.out.println(correctOrder);
-        assertEquals(unordered,correctOrder);
+        unordered.forEach(obj -> {
+            System.out.println("Hand: " + obj);
+            System.out.println("Cards" + obj.getCards());
+        });
+        assertEquals(unordered, correctOrder);
     }
 }

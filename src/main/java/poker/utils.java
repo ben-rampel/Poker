@@ -12,6 +12,10 @@ public class utils {
      * returns true if the list contains the card with specified rank and suit
      * returns false if list does not contain such card
      */
+
+    public static int smallBlind = 1;
+    public static int bigBlind = 2;
+
     public static boolean containsCard(List<Card> cards, Card.Rank rank, Card.Suit suit) {
         Card testCard = new Card(rank, suit);
         for (Card c : cards) {
@@ -28,7 +32,7 @@ public class utils {
      * returns false if the hand is not a straight
      */
     public static boolean isStraight(List<Card> cards) {
-        if(cards.size() != 5){
+        if (cards.size() != 5) {
             throw new IllegalStateException();
         }
 
@@ -36,12 +40,12 @@ public class utils {
         Collections.sort(clone);
 
         boolean straight = true;
-        for(int i = 0; i < clone.size() - 1;i++) {
-            if(clone.get(i).compareTo(clone.get(i+1)) != -1) straight = false;
+        for (int i = 0; i < clone.size() - 1; i++) {
+            if (clone.get(i).compareTo(clone.get(i + 1)) != -1) straight = false;
         }
 
-        if(!straight && clone.get(4).getRank() == Card.Rank.ace){
-            clone.set(4, new Card(clone.get(4).getSuit(),aceLow));
+        if (!straight && clone.get(4).getRank() == Card.Rank.ace) {
+            clone.set(4, new Card(clone.get(4).getSuit(), aceLow));
             straight = isStraight(clone);
         }
 

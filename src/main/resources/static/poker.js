@@ -67,6 +67,15 @@ app.controller('controller', function ($scope, $stomp, $log, $http) {
                 }
             });
             console.log("Player called " + $ctrl.bet);
+        } else if(action === "BET") {
+            $stomp.send('/app/sendTurn', {
+                message: {
+                    "action": "BET",
+                    "betAmount": Number($ctrl.raiseBet),
+                    "player": $scope.player
+                }
+            });
+            console.log("Player bet " + $ctrl.bet);
         } else if (action === "RAISE") {
             //validate bet amount against player's chips
             let currentPlayer = $scope.currentGameData.players.find(obj => obj.name == $scope.player);
@@ -75,7 +84,7 @@ app.controller('controller', function ($scope, $stomp, $log, $http) {
             console.log(currentPlayer.chips + " " + $scope.currentGameData.turnNotification.minimumBet + " " + raiseValue);
 
             //if (raiseValue <= currentPlayer.chips) {
-            if(true) {
+            if (true) {
                 if ($scope.currentGameData.turnNotification.minimumBet === 0 || raiseValue > $scope.currentGameData.turnNotification.minimumBet) {
                     //send raise message
                     $stomp.send('/app/sendTurn', {
@@ -113,7 +122,7 @@ app.controller('controller', function ($scope, $stomp, $log, $http) {
         console.log($scope.player);
         $http.post('http://' + hostname + ':8080/login', [$scope.player, $scope.password])
             .then(
-                function(data){
+                function (data) {
                     //successful login
                     console.log(data);
                     $stomp
@@ -134,14 +143,14 @@ app.controller('controller', function ($scope, $stomp, $log, $http) {
                                 }
                                 $scope.$apply();
                                 console.log(payload);
-                            })
+                            });
                             var errorSubscription = $stomp.subscribe(url + "/error", function (payload, headers, res) {
                                 $('#errorText').text(payload);
                                 $('#errorModal').modal('show');
                             });
                         })
                 },
-                function(data){
+                function (data) {
                     //bad login
                     $('#usernameSelect').modal('show');
                     $('#loginWarning').show();
