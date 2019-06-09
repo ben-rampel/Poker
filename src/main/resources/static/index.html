@@ -134,10 +134,11 @@
         </div>
         <div class="table">
             <div ng-repeat="player in currentGameData.players">
-                <div class="{{currentGameData.folded[player.name] ? 'player' : 'foldedPlayer' + ' border'}}"
+                <div class="{{currentGameData.folded[player.name] ? 'player' : 'foldedPlayer'}}"
                      id="{{'player' + ($index + 1)}}">
                     <p class="playerLabel">{{player.name}}</p>
                     <p class="playerChipsLabel" ng-bind="player.chips">{{player.chips}}</p>
+                    <p ng-if="player.dealer" class="dealerButton" id="{{'player' + ($index + 1) + 'button'}}"></p>
                 </div>
             </div>
 

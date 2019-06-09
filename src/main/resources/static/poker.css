@@ -1,7 +1,7 @@
 .table {
     height: 300px;
     width: 700px;
-    background: green;
+    background: #5f7440;
     border-radius: 60px;
     margin-left: 300px;
     margin-top: 120px;
@@ -21,7 +21,7 @@
     height: 100px;
     width: 100px;
     border-radius: 100px;
-    background: #1d283b;
+    background: #5a5a5a;
     position: absolute;
     text-align: center;
     color: white;
@@ -59,13 +59,14 @@
     padding-left: 30px
 }
 
-#dealerbutton {
-    background: blue;
+.dealerButton {
+    background: #7e5736;
     width: 20px;
     height: 20px;
     border-radius: 20px;
     top: -100px;
     position: relative;
+
 }
 
 #player1 {
@@ -73,9 +74,19 @@
     margin-top: 100px;
 }
 
+#player1button {
+    left: 110px;
+    top: -50px;
+}
+
 #player2 {
     margin-top: 250px;
     margin-left: 167px;
+}
+
+#player2button {
+    left: 50px;
+    top: -120px;
 }
 
 #player3 {
@@ -83,9 +94,19 @@
     margin-left: 434px;
 }
 
+#player3button {
+    left: 50px;
+    top: -120px;
+}
+
 #player4 {
     margin-top: -50px;
     margin-left: 167px;
+}
+
+#player4button {
+    left: 50px;
+    top: 15px;
 }
 
 #player5 {
@@ -93,9 +114,19 @@
     margin-left: 434px;
 }
 
+#player5button {
+    left: 50px;
+    top: 15px;
+}
+
 #player6 {
     margin-left: 650px;
     margin-top: 100px;
+}
+
+#player6button {
+    left: -35px;
+    top: -60px;
 }
 
 .cardimg {

@@ -57,6 +57,7 @@ public class TableController {
     }
 
     private Player mainTurnLoop() throws ExecutionException, InterruptedException {
+        int turnsPlayed = 0;
         while (table.hasNext()) {
             Player next = table.next();
             Future<Turn> t;
@@ -68,6 +69,7 @@ public class TableController {
             for (int i = 0; i < 1000; ) {
                 if (t.isDone()) {
                     turn = t.get();
+                    turnsPlayed++;
                     break;
                 } else {
                     Thread.sleep(100);
@@ -97,7 +99,7 @@ public class TableController {
                     }
                 }
             }
-            if (next.isDealer()) {
+            if (next.isDealer() || turnsPlayed == table.activePlayers().size()) {
                 return null;
             }
         }
