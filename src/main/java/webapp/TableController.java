@@ -14,6 +14,7 @@ public class TableController {
     private Turn turn;
     private Turn newTurn;
     private TurnNotification turnNotification;
+    private int dealerSeed = 0;
 
     public TableController(Table table) {
         this.table = table;
@@ -22,13 +23,14 @@ public class TableController {
 
     @Async
     public Future<Player> startRound() throws ExecutionException, InterruptedException {
-        table = new TableImpl(this.table.getPlayers());
+        table = new TableImpl(this.table.getPlayers(),dealerSeed);
+        dealerSeed++;
         turn = null;
         newTurn = null;
         turnNotification = null;
         System.out.println("started");
         while (!table.hasTwoNext()) {
-            Thread.sleep(1000);
+            Thread.sleep(10000);
             System.out.println("waiting for players...");
         }
         //Post Blinds

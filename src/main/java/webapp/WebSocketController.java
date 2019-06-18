@@ -2,6 +2,8 @@ package webapp;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.squareup.okhttp.*;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.ui.Model;
@@ -18,6 +20,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 import org.springframework.web.socket.messaging.SessionSubscribeEvent;
 import poker.Card;
@@ -26,6 +29,7 @@ import poker.Turn;
 
 import javax.annotation.PostConstruct;
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -43,9 +47,13 @@ public class WebSocketController {
     private SimpMessageSendingOperations messagingTemplate;
     private TableController tableController;
     private Future<Player> winner;
+    private String discordID = "582421274219773962";
+    private String discordToken = "kX3LOI-Y68fYI7cMk_koXl0uTn2qJNOP";
+    private String discordRedirect = "http%3A%2F%2F24.211.132.87%3A8080%2FsignUp%2Fcallback";
 
     @Autowired
-    public WebSocketController(SimpMessageSendingOperations messagingTemplate, TableController tableController) {
+    public WebSocketController(SimpMessageSendingOperations messagingTemplate, TableController tableController) throws ClassNotFoundException {
+        Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
         this.messagingTemplate = messagingTemplate;
         this.tableController = tableController;
     }
@@ -59,7 +67,9 @@ public class WebSocketController {
                     while (!winner.isDone()) {
                         Thread.sleep(1000);
                     }
-                    winner.get().receiveWinnings(tableController.getTable().getPotSize());
+                    if(winner != null) {
+                        winner.get().receiveWinnings(tableController.getTable().getPotSize());
+                    }
                     Thread.sleep(6000);
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -106,8 +116,13 @@ public class WebSocketController {
         }
         try {
             if (winner.isDone()) {
-                currentGameData.setWinner(winner.get());
-                currentGameData.setWinnerInfo(tableController.getTable().getWinnerInfo());
+                if(winner != null){
+                    currentGameData.setWinner(winner.get());
+                    currentGameData.setWinnerInfo(tableController.getTable().getWinnerInfo());
+                } else {
+                    currentGameData.setWinner(null);
+                    currentGameData.setWinnerInfo("game ended");
+                }
             }
         } catch (InterruptedException | ExecutionException | NullPointerException e) {
             e.printStackTrace();
@@ -159,6 +174,7 @@ public class WebSocketController {
     public String signUp(Model model) {
         model.addAttribute("loggedIn", false);
         model.addAttribute("signupform", new SignUpForm());
+        model.addAttribute("authLink", "https://discordapp.com/api/oauth2/authorize?client_id=582421274219773962&redirect_uri=http%3A%2F%2F24.211.132.87%3A8080%2FsignUp%2Fcallback&response_type=code&scope=identify%20email%20connections");
         return "signUp";
     }
 
@@ -168,54 +184,40 @@ public class WebSocketController {
             model.addAttribute("loggedIn", true);
             model.addAttribute("discordCode", code);
             model.addAttribute("signupform", new SignUpForm());
+            model.addAttribute("authLink", "https://discordapp.com/api/oauth2/authorize?client_id=582421274219773962&redirect_uri=http%3A%2F%2F24.211.132.87%3A8080%2FsignUp%2Fcallback&response_type=code&scope=identify%20email%20connections");
         }
         return "signUp";
     }
 
     @PostMapping("/signUp/callback")
-    public String signUpSubmit(@ModelAttribute SignUpForm data, Model model) {
+    public String signUpSubmit(@ModelAttribute SignUpForm data, Model model) throws IOException, JSONException {
         String code = data.getDiscordCode();
-        //System.out.println("code: " + code);
-        try {
-            URL url = new URL("https://discordapp.com/api/oauth2/token?grant_type=authorization_code&code=" + code + "&redirect_uri=http%3A%2F%2Flocalhost%3A8080%2FsignUp%2Fcallback");
-            HttpURLConnection con = (HttpURLConnection) url.openConnection();
-            con.setRequestMethod("POST");
-            String encoding = Base64.getEncoder().encodeToString(("582421274219773962:kX3LOI-Y68fYI7cMk_koXl0uTn2qJNOP").getBytes());
-            con.setRequestProperty("Content-Type", "application/json");
-            con.setRequestProperty("Authorization", "Basic " + encoding);
-            con.setFixedLengthStreamingMode(0);
-            con.setDoOutput(true);
-            BufferedReader in = new BufferedReader(
-                    new InputStreamReader(con.getInputStream()));
-            String inputLine;
-            StringBuffer content = new StringBuffer();
-            while ((inputLine = in.readLine()) != null) {
-                content.append(inputLine);
-            }
-            in.close();
-            // System.out.println(content);
-            JSONObject tokenObject = new JSONObject(content.toString());
-            String token = (String) tokenObject.get("access_token");
-            url = new URL("https://discordapp.com/api/users/@me");
-            HttpURLConnection userDataCon = (HttpURLConnection) url.openConnection();
-            userDataCon.setRequestProperty("Content-Type", "application/json");
-            userDataCon.setRequestProperty("Authorization", "Bearer " + token);
-            in = new BufferedReader(
-                    new InputStreamReader(userDataCon.getInputStream()));
-            content = new StringBuffer();
-            while ((inputLine = in.readLine()) != null) {
-                content.append(inputLine);
-            }
-            in.close();
-            //System.out.println(content);
-            JSONObject userdata = new JSONObject(content.toString());
-            String discordID = (String) userdata.get("id");
-            UserDatabaseUtils.register(data.getName(), data.getPassword(), discordID);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        OkHttpClient client = new OkHttpClient();
+        String auth = Base64.getEncoder().encodeToString(("582421274219773962:kX3LOI-Y68fYI7cMk_koXl0uTn2qJNOP").getBytes());
+        Request request = new Request.Builder()
+                .header("Content-Type", "application/json")
+                .header("Authorization", "Basic " + auth)
+                .url("https://discordapp.com/api/oauth2/token?grant_type=authorization_code&code=" + code + "&redirect_uri=http%3A%2F%2F24.211.132.87%3A8080%2FsignUp%2Fcallback")
+                .post(new MultipartBuilder().addFormDataPart("","" ).build())
+                .build();
+        Response response = null;
+        response = client.newCall(request).execute();
+        String accessToken = (String) new JSONObject(response.body().string()).get("access_token");
+
+        request = new Request.Builder()
+                .header("Content-Type", "application/json")
+                .header("Authorization", "Bearer " + accessToken)
+                .url("https://discordapp.com/api/users/@me")
+                .build();
+
+        response = client.newCall(request).execute();
+        String id = (String) new JSONObject(response.body().string()).get("id");
+
+        UserDatabaseUtils.register(data.getName(), data.getPassword(), id);
+
         model.addAttribute("loggedIn", false);
         model.addAttribute("signupform", new SignUpForm());
+        model.addAttribute("authLink", "https://discordapp.com/api/oauth2/authorize?client_id=582421274219773962&redirect_uri=http%3A%2F%2F24.211.132.87%3A8080%2FsignUp%2Fcallback&response_type=code&scope=identify%20email%20connections");
         return "signUp";
     }
 
@@ -223,9 +225,9 @@ public class WebSocketController {
     public void onDisconnectEvent(SessionDisconnectEvent event) {
         MessageHeaders headers = event.getMessage().getHeaders();
         String sessionID = (String) headers.get("simpSessionId");
-        tableController.removePlayer(
-                tableController.getTable().getPlayerFromSessionID(sessionID)
-        );
+        Player toBeRemoved = tableController.getTable().getPlayerFromSessionID(sessionID);
+        UserDatabaseUtils.deposit(toBeRemoved.getName(), toBeRemoved.getChips());
+        tableController.removePlayer(toBeRemoved);
     }
 
     @EventListener

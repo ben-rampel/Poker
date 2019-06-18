@@ -43,7 +43,7 @@ public class UserDatabaseUtils {
                     "          @pDiscordUUID = N'" + discordID + "',\n" +
                     "          @pChips = N'250',\n" +
                     "          @responseMessage=@responseMessage OUTPUT\n";
-            statement.executeQuery(registerQuery);
+            statement.executeUpdate(registerQuery);
         } catch (SQLException e) {
             e.printStackTrace();
         }

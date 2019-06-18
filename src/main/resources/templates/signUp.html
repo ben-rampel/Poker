@@ -28,7 +28,7 @@
 <div class="container">
     <form action="#" th:action="@{/signUp/callback}" th:object="${signupform}" method="post">
         <div th:if="${!loggedIn}" class="form-group">
-            <a href="https://discordapp.com/api/oauth2/authorize?client_id=582421274219773962&redirect_uri=http%3A%2F%2Flocalhost%3A8080%2FsignUp%2Fcallback&response_type=code&scope=identify">Sign
+            <a th:href="${authLink}">Sign
                 in with Discord</a>
         </div>
         <input type="hidden" th:attr="value = ${discordCode}" name="discordCode" id="discordCode">

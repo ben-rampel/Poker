@@ -1,5 +1,5 @@
 'use strict';
-var hostname = "localhost";
+var hostname = "24.211.132.87";
 var app = angular.module('poker', ['ngStomp']);
 app.controller('controller', function ($scope, $stomp, $log, $http) {
     let $ctrl = this;

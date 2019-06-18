@@ -24,13 +24,13 @@ public class TableImpl implements Table {
         currentPlayerIndex = 0;
     }
 
-    public TableImpl(List<Player> players) {
+    public TableImpl(List<Player> players, int dealerSeed) {
         round = ROUND.BLINDS;
         deck = new Deck();
         commonCards = new ArrayList<>();
         this.players = players;
         potSize = 0;
-        currentPlayerIndex = 0;
+        currentPlayerIndex = dealerSeed;
         for (Player p : players) {
             p.setDealer(false);
             p.setInRound(true);
