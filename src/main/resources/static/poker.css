@@ -1,0 +1,146 @@
+.table {
+    height: 300px;
+    width: 700px;
+    background: #5f7440;
+    border-radius: 60px;
+    margin-left: 300px;
+    margin-top: 120px;
+}
+
+.player {
+    height: 100px;
+    width: 100px;
+    border-radius: 100px;
+    background: #39547b;
+    position: absolute;
+    text-align: center;
+    color: ghostwhite;
+}
+
+.foldedPlayer {
+    height: 100px;
+    width: 100px;
+    border-radius: 100px;
+    background: #5a5a5a;
+    position: absolute;
+    text-align: center;
+    color: white;
+}
+
+.playerLabel {
+    margin-top: 30px;
+    margin-bottom: 0px;
+}
+
+.playerChipsLabel {
+    margin-top: 0px;
+}
+
+.commonCards {
+    position: absolute;
+    margin-top: 100px;
+    margin-left: 215px;
+}
+
+.potAmount {
+    position: absolute;
+    margin-top: 160px;
+    margin-left: 115px;
+}
+
+.dashboard {
+    margin-top: 55px !important;
+    left: 0;
+    top: 0;
+    position: fixed;
+    width: 170px;
+    height: 100%;
+    background: gray;
+    padding-left: 30px
+}
+
+.dealerButton {
+    background: #7e5736;
+    width: 20px;
+    height: 20px;
+    border-radius: 20px;
+    top: -100px;
+    position: relative;
+
+}
+
+#player1 {
+    margin-left: -50px;
+    margin-top: 100px;
+}
+
+#player1button {
+    left: 110px;
+    top: -50px;
+}
+
+#player2 {
+    margin-top: 250px;
+    margin-left: 167px;
+}
+
+#player2button {
+    left: 50px;
+    top: -120px;
+}
+
+#player3 {
+    margin-top: 250px;
+    margin-left: 434px;
+}
+
+#player3button {
+    left: 50px;
+    top: -120px;
+}
+
+#player4 {
+    margin-top: -50px;
+    margin-left: 167px;
+}
+
+#player4button {
+    left: 50px;
+    top: 15px;
+}
+
+#player5 {
+    margin-top: -50px;
+    margin-left: 434px;
+}
+
+#player5button {
+    left: 50px;
+    top: 15px;
+}
+
+#player6 {
+    margin-left: 650px;
+    margin-top: 100px;
+}
+
+#player6button {
+    left: -35px;
+    top: -60px;
+}
+
+.cardimg {
+    height: 100px;
+    width: 70px;
+}
+
+#loginWarning {
+    display: none;
+}
+
+#css-input {
+    display: inline-block;
+    position: relative;
+    left: 150px;
+    top: 400px;
+}

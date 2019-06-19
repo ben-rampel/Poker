@@ -4,6 +4,7 @@ import org.junit.Test;
 import poker.Card;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static junit.framework.Assert.assertFalse;
@@ -21,7 +22,6 @@ public class utilsTests {
         straight.add(new Card(Card.Rank.three, Card.Suit.spades));
         straight.add(new Card(Card.Rank.four, Card.Suit.hearts));
         straight.add(new Card(Card.Rank.five, Card.Suit.hearts));
-
         assertTrue(isStraight(straight));
 
         straight.clear();

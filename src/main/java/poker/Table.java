@@ -1,146 +1,38 @@
 package poker;
 
-import java.util.*;
+import java.util.Iterator;
+import java.util.List;
 
-import static poker.utils.handTypes;
+public interface Table extends Iterator<Player> {
+    List<Player> activePlayers();
 
-public class Table {
-    public enum ROUND {PREFLOP, FLOP, TURN, RIVER, INTERIM}
-    private ROUND round;
-    private Deck deck;
-    //Map the list of playerBets to their current bet in the round
-    private Map<Player, Integer> playerBets;
-    private Map<Player, Boolean> playersInRound;
-    private List<Card> commonCards;
-    private int potSize;
-    private int dealerIndex;
-    private int currentPlayerIndex;
+    void addToPot(int i);
 
-    private TurnNotification currentTurn;
+    void addPlayer(Player player);
 
-    private final int smallBlind;
-    private final int bigBlind;
+    void removePlayer(Player player);
 
-    private Player winner;
+    void nextRound();
 
-    public ROUND getRound() {
-        return round;
-    }
+    void setCurrentBet(int amt);
 
-    public void setRound(ROUND round) {
-        this.round = round;
-    }
+    TableImpl.ROUND getRound();
 
-    public Deck getDeck() {
-        return deck;
-    }
+    int getCurrentBet();
 
-    public void setDeck(Deck deck) {
-        this.deck = deck;
-    }
+    boolean hasTwoNext();
 
-    public Map<Player, Integer> getPlayerBets() {
-        return playerBets;
-    }
+    Player getShowdownWinner();
 
-    public void setPlayerBets(Map<Player, Integer> playerBets) {
-        this.playerBets = playerBets;
-    }
+    Player getPlayerFromName(String name);
 
-    public Map<Player, Boolean> getPlayersInRound() {
-        return playersInRound;
-    }
+    Player getPlayerFromSessionID(String sessionID);
 
-    public void setPlayersInRound(Map<Player, Boolean> playersInRound) {
-        this.playersInRound = playersInRound;
-    }
+    List<Player> getPlayers();
 
-    public List<Card> getCommonCards() {
-        return commonCards;
-    }
+    int getPotSize();
 
-    public void setCommonCards(List<Card> commonCards) {
-        this.commonCards = commonCards;
-    }
+    List<Card> getCommonCards();
 
-    public int getPotSize() {
-        return potSize;
-    }
-
-    public void setPotSize(int potSize) {
-        this.potSize = potSize;
-    }
-
-    public int getDealerIndex() {
-        return dealerIndex;
-    }
-
-    public void setDealerIndex(int dealerIndex) {
-        this.dealerIndex = dealerIndex;
-    }
-
-    public int getCurrentPlayerIndex() {
-        return currentPlayerIndex;
-    }
-
-    public void setCurrentPlayerIndex(int currentPlayerIndex) {
-        this.currentPlayerIndex = currentPlayerIndex;
-    }
-
-    public int getSmallBlind() {
-        return smallBlind;
-    }
-
-    public int getBigBlind() {
-        return bigBlind;
-    }
-
-    public Player getWinner() {
-        return winner;
-    }
-
-    public void setWinner(Player winner) {
-        this.winner = winner;
-    }
-
-    public Table(List<Player> players){
-        playerBets = new HashMap<>();
-        playersInRound = new HashMap<>();
-        if(players != null) {
-            for (Player player : players) {
-                playerBets.put(player, 0);
-                playersInRound.put(player,true);
-            }
-        }
-        dealerIndex = 0;
-        commonCards = new ArrayList<>();
-        potSize = 0;
-        round = ROUND.PREFLOP;
-        deck = new Deck();
-        smallBlind = 1;
-        bigBlind = 2;
-    }
-
-    public Table(){
-        this(null);
-    }
-
-    public void addPlayer(Player p){
-        playerBets.put(p,0);
-        if(round != ROUND.INTERIM){
-            playersInRound.put(p,false);
-        } else {
-            playersInRound.put(p, true);
-        }
-    }
-
-    public Player getPlayerFromName(String name){
-        for(Player p : playersInRound.keySet()){
-            if(name.equals(p.getName()) || name.equals(p.getName().toLowerCase())){
-                return p;
-            }
-        }
-        return null;
-    }
-
+    String getWinnerInfo();
 }

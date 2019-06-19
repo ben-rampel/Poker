@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Poker </title>
+    <meta charset="utf-8">
+    <meta content="width=device-width, initial-scale=1, shrink-to-fit=no" name="viewport">
+    <link crossorigin="anonymous" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+          integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" rel="stylesheet">
+    <link href="poker.css" rel="stylesheet">
+    <script src="bower_components/angular/angular.min.js"></script>
+    <script src="bower_components/ng-stomp/dist/ng-stomp.standalone.min.js"></script>
+</head>
+
+<body ng-app="poker" ng-controller="controller as $ctrl">
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <a class="navbar-brand" href="#">Poker</a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav">
+            <li class="nav-item active">
+                <a class="nav-link" href="/">Play<span class="sr-only">(current)</span></a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/signUp">Sign Up</a>
+            </li>
+        </ul>
+    </div>
+</nav>
+<div class="modal" id="winnerModal" role="dialog" tabindex="-1">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Winner</h5>
+                <button aria-label="Close" class="close" data-dismiss="modal" type="button">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p id="winnerText"></p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" data-dismiss="modal" type="button">Ok</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal" id="errorModal" role="dialog" tabindex="-1">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Error</h5>
+                <button aria-label="Close" class="close" data-dismiss="modal" type="button">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p id="errorText"></p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" data-dismiss="modal" type="button">Ok</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal" id="usernameSelect" role="dialog" tabindex="-1">
+    <div class="modal-dialog" role="document">
+        <form>
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Login</h5>
+                    <button aria-label="Close" class="close" data-dismiss="modal" type="button">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p>
+                    <div class="alert alert-warning" id="loginWarning" role="alert">
+                        Invalid login
+                    </div>
+                    <div class="input-group mb-3">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text" id="usernameDesc">Name: </span>
+                        </div>
+                        <input aria-describedby="usernameDesc" class="form-control" ng-model="player"
+                               type="text">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text" id="passwordDesc">Password: </span>
+                        </div>
+                        <input aria-describedby="passwordDesc" class="form-control" ng-model="password"
+                               type="password">
+                    </div>
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" data-dismiss="modal" type="button">Close</button>
+                    <button class="btn btn-primary" data-dismiss="modal" ng-click="connectFunc()" type="button">Ok
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+<div class="container">
+    <div class="game">
+        <div class="dashboard">
+            <h5>Player: {{player}}</h5>
+            <p ng-if="currentGameData.personalCards[0] != null">Your Cards:</p>
+            <p ng-if="currentGameData.personalCards[0] != null" ng-repeat="card in currentGameData.personalCards">
+                <img class="cardimg"
+                     src="{{(currentGameData.personalCards[0] != null) ? $ctrl.getCardUrl(card.rank,card.suit) : ''}}"/>
+            </p>
+            <div style="margin-bottom: 4px;" class="input-group" ng-if="currentGameData.turnNotification != null"
+                 ng-repeat="option in currentGameData.turnNotification.options">
+                <input class="form-control" id="raiseValue" ng-if="option === 'RAISE'" ng-model="$ctrl.raiseBet">
+                <input class="form-control" id="betValue" ng-if="option === 'BET'" ng-model="$ctrl.raiseBet">
+
+                <div ng-if="option === 'RAISE'" class="input-group-append">
+                    <button type="button" class="btn btn-primary" ng-click="submitTurn(option, $ctrl.bet)">
+                        {{option}}
+                        {{(option == 'CALL') ? $ctrl.bet : ""}}
+                    </button>
+                </div>
+                <button ng-if="option !== 'RAISE'" type="button" class="btn btn-primary"
+                        ng-click="submitTurn(option, $ctrl.bet)">
+                    {{option}}
+                    {{(option == 'CALL') ? $ctrl.bet : ""}}
+                </button>
+            </div>
+
+
+        </div>
+        <div class="table">
+            <div ng-repeat="player in currentGameData.players">
+                <div class="{{currentGameData.folded[player.name] ? 'player' : 'foldedPlayer'}}"
+                     id="{{'player' + ($index + 1)}}">
+                    <p class="playerLabel">{{player.name}}</p>
+                    <p class="playerChipsLabel" ng-bind="player.chips">{{player.chips}}</p>
+                    <p ng-if="player.dealer" class="dealerButton" id="{{'player' + ($index + 1) + 'button'}}"></p>
+                </div>
+            </div>
+
+            <!-- change themes -->
+            <div id="css-input">
+                <input id="css-file" type="file"/>
+                <button type="button" onclick="loadCSS();">Change Theme!</button>
+            </div>
+
+            <div class="commonCards">
+                <span ng-repeat="card in currentGameData.commonCards">
+                    <img class="cardimg" src="{{$ctrl.getCardUrl(card.rank,card.suit)}}"/>
+                </span>
+            </div>
+
+            <div class="potAmount">
+                <span>Pot: </span>
+                <span ng-bind="currentGameData.pot"></span>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
+        integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
+        crossorigin="anonymous"></script>
+<script src="poker.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"
+        integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1"
+        crossorigin="anonymous"></script>
+<script src="bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
+</html>

@@ -5,7 +5,7 @@ package poker;
  * Card
  * Define an abstraction to store and return the information shown on a card
  */
-public class Card {
+public class Card implements Comparable<Card> {
     private final Suit suit;
 
     private final Rank rank;
@@ -14,6 +14,7 @@ public class Card {
         suit = s;
         rank = r;
     }
+
     public Card(Rank r, Suit s) {
         suit = s;
         rank = r;
@@ -37,6 +38,20 @@ public class Card {
 
     public enum Suit {clubs, hearts, diamonds, spades}
 
-    public enum Rank {two, three, four, five, six, seven, eight, nine, ten, jack, queen, king, ace}
+    public enum Rank {
+        aceLow(0), two(1), three(2), four(3), five(4), six(5), seven(6), eight(7), nine(8), ten(9), jack(10), queen(11), king(12), ace(13);
+        private final int num;
 
+        Rank(int n) {
+            this.num = n;
+        }
+
+        public int index() {
+            return this.num;
+        }
+    }
+
+    public int compareTo(Card other) {
+        return this.rank.index() - other.rank.index();
+    }
 }

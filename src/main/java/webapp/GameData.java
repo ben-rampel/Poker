@@ -1,6 +1,5 @@
 package webapp;
 
-import com.sun.org.apache.xpath.internal.operations.Bool;
 import poker.Card;
 import poker.Player;
 import poker.TurnNotification;
