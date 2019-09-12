@@ -46,16 +46,17 @@ import java.util.concurrent.Future;
 public class WebSocketController {
     private SimpMessageSendingOperations messagingTemplate;
     private TableController tableController;
+    private UserRepository userRepository;
     private Future<Player> winner;
     private String discordID = "582421274219773962";
     private String discordToken = "kX3LOI-Y68fYI7cMk_koXl0uTn2qJNOP";
     private String discordRedirect = "http%3A%2F%2F24.211.132.87%3A8080%2FsignUp%2Fcallback";
 
     @Autowired
-    public WebSocketController(SimpMessageSendingOperations messagingTemplate, TableController tableController) throws ClassNotFoundException {
-        Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
+    public WebSocketController(SimpMessageSendingOperations messagingTemplate, TableController tableController, UserRepository userRepository) throws ClassNotFoundException {
         this.messagingTemplate = messagingTemplate;
         this.tableController = tableController;
+        this.userRepository = userRepository;
     }
 
     @PostConstruct
@@ -150,15 +151,16 @@ public class WebSocketController {
 
     @PostMapping("/login")
     public ResponseEntity login(@RequestBody String[] credentials) {
+        System.out.println("login");
         String username = credentials[0];
         String password = credentials[1];
         for (Player p : tableController.getTable().getPlayers()) {
             if (p.getName().equals(username)) return new ResponseEntity(HttpStatus.BAD_REQUEST);
         }
-        if (UserDatabaseUtils.login(username, password)) {
-            if (UserDatabaseUtils.getBalance(username) >= 250) {
+        if (userRepository.login(username, password)) {
+            if (userRepository.getBalance(username) >= 250) {
                 tableController.getTable().addPlayer(new Player(username, 250));
-                UserDatabaseUtils.withdraw(username, 250);
+                userRepository.withdraw(username, 250);
             } else {
                 tableController.getTable().addPlayer(new Player(username, 0));
             }
@@ -172,52 +174,15 @@ public class WebSocketController {
 
     @GetMapping("/signUp")
     public String signUp(Model model) {
-        model.addAttribute("loggedIn", false);
         model.addAttribute("signupform", new SignUpForm());
-        model.addAttribute("authLink", "https://discordapp.com/api/oauth2/authorize?client_id=582421274219773962&redirect_uri=http%3A%2F%2F24.211.132.87%3A8080%2FsignUp%2Fcallback&response_type=code&scope=identify%20email%20connections");
         return "signUp";
     }
 
-    @GetMapping("/signUp/callback")
-    public String signUpCallBack(@RequestParam(required = false) String code, Model model) {
-        if (code != null) {
-            model.addAttribute("loggedIn", true);
-            model.addAttribute("discordCode", code);
-            model.addAttribute("signupform", new SignUpForm());
-            model.addAttribute("authLink", "https://discordapp.com/api/oauth2/authorize?client_id=582421274219773962&redirect_uri=http%3A%2F%2F24.211.132.87%3A8080%2FsignUp%2Fcallback&response_type=code&scope=identify%20email%20connections");
-        }
-        return "signUp";
-    }
-
-    @PostMapping("/signUp/callback")
-    public String signUpSubmit(@ModelAttribute SignUpForm data, Model model) throws IOException, JSONException {
-        String code = data.getDiscordCode();
-        OkHttpClient client = new OkHttpClient();
-        String auth = Base64.getEncoder().encodeToString(("582421274219773962:kX3LOI-Y68fYI7cMk_koXl0uTn2qJNOP").getBytes());
-        Request request = new Request.Builder()
-                .header("Content-Type", "application/json")
-                .header("Authorization", "Basic " + auth)
-                .url("https://discordapp.com/api/oauth2/token?grant_type=authorization_code&code=" + code + "&redirect_uri=http%3A%2F%2F24.211.132.87%3A8080%2FsignUp%2Fcallback")
-                .post(new MultipartBuilder().addFormDataPart("","" ).build())
-                .build();
-        Response response = null;
-        response = client.newCall(request).execute();
-        String accessToken = (String) new JSONObject(response.body().string()).get("access_token");
-
-        request = new Request.Builder()
-                .header("Content-Type", "application/json")
-                .header("Authorization", "Bearer " + accessToken)
-                .url("https://discordapp.com/api/users/@me")
-                .build();
-
-        response = client.newCall(request).execute();
-        String id = (String) new JSONObject(response.body().string()).get("id");
-
-        UserDatabaseUtils.register(data.getName(), data.getPassword(), id);
-
-        model.addAttribute("loggedIn", false);
+    @PostMapping("/signUp")
+    public String signUpSubmit(@ModelAttribute SignUpForm data, Model model) {
+        userRepository.register(data.getName(), data.getPassword());
+        System.out.println("registered");
         model.addAttribute("signupform", new SignUpForm());
-        model.addAttribute("authLink", "https://discordapp.com/api/oauth2/authorize?client_id=582421274219773962&redirect_uri=http%3A%2F%2F24.211.132.87%3A8080%2FsignUp%2Fcallback&response_type=code&scope=identify%20email%20connections");
         return "signUp";
     }
 
@@ -226,7 +191,7 @@ public class WebSocketController {
         MessageHeaders headers = event.getMessage().getHeaders();
         String sessionID = (String) headers.get("simpSessionId");
         Player toBeRemoved = tableController.getTable().getPlayerFromSessionID(sessionID);
-        UserDatabaseUtils.deposit(toBeRemoved.getName(), toBeRemoved.getChips());
+        userRepository.deposit(toBeRemoved.getName(), toBeRemoved.getChips());
         tableController.removePlayer(toBeRemoved);
     }
 

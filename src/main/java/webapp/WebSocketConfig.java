@@ -9,6 +9,10 @@ import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
 import poker.TableImpl;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.util.Scanner;
+
 @Configuration
 @EnableAsync
 @EnableWebSocketMessageBroker
@@ -30,5 +34,18 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Bean
     public TableController getTableController() {
         return new TableController(new TableImpl());
+    }
+
+    @Bean public String[] databaseParameters() {
+        String[] params = new String[3];
+        try {
+            Scanner in = new Scanner(new File("/home/ben/Documents/pokerdb-conf"));
+            for(int i = 0; i < 3; i++){
+                params[i] = in.nextLine();
+            }
+            return params;
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException("Database parameters file not found.");
+        }
     }
 }

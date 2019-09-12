@@ -26,12 +26,7 @@
     </div>
 </nav>
 <div class="container">
-    <form action="#" th:action="@{/signUp/callback}" th:object="${signupform}" method="post">
-        <div th:if="${!loggedIn}" class="form-group">
-            <a th:href="${authLink}">Sign
-                in with Discord</a>
-        </div>
-        <input type="hidden" th:attr="value = ${discordCode}" name="discordCode" id="discordCode">
+    <form action="#" th:action="@{/signUp}" th:object="${signupform}" method="post">
         <div class="form-group">
             <label for="exampleInputEmail1">Username</label>
             <input th:field="*{name}" type="text" class="form-control" id="exampleInputEmail1"
@@ -42,7 +37,7 @@
             <input th:field="*{password}" type="password" class="form-control" id="exampleInputPassword1"
                    placeholder="Password">
         </div>
-        <button type="submit" class="btn btn-primary" th:disabled="${!loggedIn}">Submit</button>
+        <button type="submit" class="btn btn-primary">Submit</button>
     </form>
 </div>
 </body>
