@@ -6,6 +6,8 @@ import java.util.List;
 public interface Table extends Iterator<Player> {
     List<Player> activePlayers();
 
+    void drawHoleCards();
+
     void addToPot(int i);
 
     void addPlayer(Player player);

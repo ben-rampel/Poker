@@ -39,7 +39,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Bean public String[] databaseParameters() {
         String[] params = new String[3];
         try {
-            Scanner in = new Scanner(new File("/home/ben/Documents/pokerdb-conf"));
+            Scanner in = new Scanner(new File("C:\\Users\\brampel\\Documents\\pokerdb-conf.txt"));
             for(int i = 0; i < 3; i++){
                 params[i] = in.nextLine();
             }

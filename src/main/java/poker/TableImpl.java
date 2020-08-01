@@ -40,6 +40,13 @@ public class TableImpl implements Table {
     }
 
     @Override
+    public void drawHoleCards() {
+        for (Player p : activePlayers()) {
+            p.drawHole(deck);
+        }
+    }
+
+    @Override
     public void addPlayer(Player player) {
         players.add(player);
     }
@@ -56,7 +63,7 @@ public class TableImpl implements Table {
 
     @Override
     public void setCurrentBet(int amt) {
-        this.currentBet = amt;
+        this.currentBet = Math.max(amt, currentBet);
     }
 
     @Override
@@ -112,8 +119,13 @@ public class TableImpl implements Table {
         return round;
     }
 
+
     @Override
     public void nextRound() {
+        for(Player p : activePlayers()){
+            p.setBet(0);
+        }
+
         if (this.round != ROUND.BLINDS) {
             currentBet = 0;
         }
@@ -137,9 +149,6 @@ public class TableImpl implements Table {
 
         switch (this.round) {
             case PREFLOP:
-                for (Player p : activePlayers()) {
-                    p.drawHole(deck);
-                }
                 break;
             case FLOP:
                 for (int i = 0; i < 3; i++) {

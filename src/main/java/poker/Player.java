@@ -29,6 +29,7 @@ public class Player {
     public void bet(int amt) {
         if (amt <= chips) {
             chips -= amt;
+            bet += amt;
         } else {
             throw new IllegalStateException("player bet more than he has");
         }

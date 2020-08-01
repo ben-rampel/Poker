@@ -27,7 +27,6 @@ public class UserRepository {
         List<User> users = new ArrayList<>();
         String selectQuery = "SELECT USERNAME,PASSWORD,AVATAR,BALANCE\n" +
                 "FROM users";
-
         resultSet = statement.executeQuery(selectQuery);
         while(resultSet.next()){
             User u = new User();
@@ -45,10 +44,9 @@ public class UserRepository {
             if(a.getUsername().equals(u.getUsername())) throw new RuntimeException("Username in use");
         }
         Statement statement = DBConn.createStatement();
-        String insertQuery = "INSERT INTO `poker`.`users`\n(`USERNAME`,`PASSWORD`,`BALANCE`)\n" +
+        String insertQuery = "INSERT INTO `brampelpoker`.`users`\n(`USERNAME`,`PASSWORD`,`BALANCE`)\n" +
                              "VALUES\n" +
                              String.format("('%s','%s',%d);",u.getUsername(),new String(u.getPassword()),u.getBalance());
-        statement.executeUpdate(insertQuery);
     }
 
     public void editUser(User u) throws SQLException {
@@ -83,6 +81,7 @@ public class UserRepository {
             addUser(u);
             return true;
         } catch(Exception e){
+            System.out.println(e.getMessage());
             return false;
         }
     }

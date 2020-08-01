@@ -7,6 +7,7 @@ import poker.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
+import static poker.Turn.PlayerAction.BET;
 import static poker.Turn.PlayerAction.FOLD;
 
 public class TableController {
@@ -34,14 +35,19 @@ public class TableController {
             System.out.println("waiting for players...");
         }
         //Post Blinds
+
+        table.drawHoleCards();
         table.next().setDealer(true);
-        if (!getBlind(new SmallBlindNotification(null))) return new AsyncResult<>(null);
-        if (!getBlind(new BigBlindNotification(null))) return new AsyncResult<>(null);
+        getBlind(new SmallBlindNotification(null));
+        getBlind(new BigBlindNotification(null));
+
         if (turn.getBetAmount() != utils.bigBlind)
             throw new AssertionError("last bet amount not equal to big blind amount after big blind");
-        table.setCurrentBet(utils.bigBlind);
+
+        table.setCurrentBet((table.activePlayers().size() > 2) ? utils.bigBlind : 0);
+
         table.nextRound();
-        if (table.activePlayers().size() < 3) table.nextRound();
+        //if (table.activePlayers().size() < 3) table.nextRound();
 
         while (table.getRound().getRoundNum() < TableImpl.ROUND.INTERIM.getRoundNum()) {
             Player roundWinner = mainTurnLoop();
@@ -64,7 +70,11 @@ public class TableController {
             Player next = table.next();
             Future<Turn> t;
             if (table.getCurrentBet() > 0) {
-                t = sendTurnNotification(new StakedTurnNotification(next, table.getCurrentBet()));
+                if(next.getBet() > 0) {
+                    t = sendTurnNotification(new LockedTurnNotification(next, table.getCurrentBet() - next.getBet()));
+                } else {
+                    t = sendTurnNotification(new StakedTurnNotification(next, table.getCurrentBet()));
+                }
             } else {
                 t = sendTurnNotification(new OpenTurnNotification(next));
             }
@@ -101,39 +111,22 @@ public class TableController {
                     }
                 }
             }
-            if (next.isDealer() || turnsPlayed == table.activePlayers().size()) {
-                return null;
+            if (next.isDealer() || turnsPlayed >= table.activePlayers().size()) {
+                boolean allInPlayersMatchedBet = true;
+                for(Player p : table.activePlayers()){
+                    if(p.getBet() != table.getCurrentBet()) allInPlayersMatchedBet = false;
+                }
+                if(allInPlayersMatchedBet) return null;
             }
         }
         throw new IllegalStateException("Turn loop ended without getting back to dealer or finding a winner");
     }
 
-    //Send out blind until someone posts blind or everyone folds
-    //Returns true if someone posts blind
-    //Returns false if everyone folds
-    private boolean getBlind(TurnNotification blind) throws ExecutionException, InterruptedException {
-        while (table.hasNext()) {
-            Player currentPlayer = table.next();
-            blind.setPlayer(currentPlayer);
-            Future<Turn> t = sendTurnNotification(blind);
-            for (int i = 0; i < 1000; ) {
-                if (t.isDone()) {
-                    turn = t.get();
-                    break;
-                } else {
-                    Thread.sleep(100);
-                    i++;
-                }
-            }
-            if (turn.getAction() == Turn.PlayerAction.CALL) {
-                turn.getPlayer().bet(turn.getBetAmount());
-                table.addToPot(turn.getBetAmount());
-                return true;
-            } else {
-                turn.getPlayer().setInRound(false);
-            }
-        }
-        return false;
+    private void getBlind(TurnNotification blind) throws ExecutionException, InterruptedException {
+        Player currentPlayer = table.next();
+        turn = new Turn(currentPlayer, BET, blind.getRequiredBet());
+        currentPlayer.bet(blind.getRequiredBet());
+        table.addToPot(blind.getRequiredBet());
     }
 
     @Async
