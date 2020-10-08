@@ -2,8 +2,6 @@ package webapp;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.squareup.okhttp.*;
-import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.ui.Model;
@@ -28,12 +26,6 @@ import poker.Player;
 import poker.Turn;
 
 import javax.annotation.PostConstruct;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -44,13 +36,10 @@ import java.util.concurrent.Future;
 @Controller
 
 public class WebSocketController {
-    private SimpMessageSendingOperations messagingTemplate;
-    private TableController tableController;
-    private UserRepository userRepository;
+    private final SimpMessageSendingOperations messagingTemplate;
+    private final TableController tableController;
+    private final UserRepository userRepository;
     private Future<Player> winner;
-    private String discordID = "582421274219773962";
-    private String discordToken = "kX3LOI-Y68fYI7cMk_koXl0uTn2qJNOP";
-    private String discordRedirect = "http%3A%2F%2F24.211.132.87%3A8080%2FsignUp%2Fcallback";
 
     @Autowired
     public WebSocketController(SimpMessageSendingOperations messagingTemplate, TableController tableController, UserRepository userRepository) throws ClassNotFoundException {
@@ -150,12 +139,12 @@ public class WebSocketController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity login(@RequestBody String[] credentials) {
+    public ResponseEntity<HttpStatus> login(@RequestBody String[] credentials) {
         System.out.println("login");
         String username = credentials[0];
         String password = credentials[1];
         for (Player p : tableController.getTable().getPlayers()) {
-            if (p.getName().equals(username)) return new ResponseEntity(HttpStatus.BAD_REQUEST);
+            if (p.getName().equals(username)) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
         if (userRepository.login(username, password)) {
             if (userRepository.getBalance(username) >= 250) {
@@ -169,7 +158,7 @@ public class WebSocketController {
             }
             return new ResponseEntity<>(HttpStatus.OK);
         }
-        return new ResponseEntity(HttpStatus.BAD_REQUEST);
+        return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
     }
 
     @GetMapping("/signUp")

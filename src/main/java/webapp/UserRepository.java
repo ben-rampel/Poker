@@ -13,7 +13,7 @@ public class UserRepository {
     Connection DBConn;
 
     @Autowired
-    public UserRepository(String[] databaseParameters){
+    public UserRepository(String[] databaseParameters) {
         try {
             DBConn = DriverManager.getConnection(databaseParameters[0], databaseParameters[1], databaseParameters[2]);
         } catch (SQLException e) {
@@ -28,7 +28,7 @@ public class UserRepository {
         String selectQuery = "SELECT USERNAME,PASSWORD,AVATAR,BALANCE\n" +
                 "FROM users";
         resultSet = statement.executeQuery(selectQuery);
-        while(resultSet.next()){
+        while (resultSet.next()) {
             User u = new User();
             u.setUsername(resultSet.getString(1));
             u.setPassword(resultSet.getBytes(2));
@@ -40,13 +40,14 @@ public class UserRepository {
     }
 
     public void addUser(User u) throws SQLException {
-        for(User a : allUsers()){
-            if(a.getUsername().equals(u.getUsername())) throw new RuntimeException("Username in use");
+        for (User a : allUsers()) {
+            if (a.getUsername().equals(u.getUsername())) throw new RuntimeException("Username in use");
         }
         Statement statement = DBConn.createStatement();
         String insertQuery = "INSERT INTO `brampelpoker`.`users`\n(`USERNAME`,`PASSWORD`,`BALANCE`)\n" +
-                             "VALUES\n" +
-                             String.format("('%s','%s',%d);",u.getUsername(),new String(u.getPassword()),u.getBalance());
+                "VALUES\n" +
+                String.format("('%s','%s',%d);", u.getUsername(), new String(u.getPassword()), u.getBalance());
+        statement.executeUpdate(insertQuery);
     }
 
     public void editUser(User u) throws SQLException {
@@ -57,10 +58,10 @@ public class UserRepository {
         statement.executeUpdate(insertQuery);
     }
 
-    public User getUser(String username){
+    public User getUser(String username) {
         try {
-            for(User a : allUsers()){
-                if(a.getUsername().equals(username)) return a;
+            for (User a : allUsers()) {
+                if (a.getUsername().equals(username)) return a;
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -68,34 +69,34 @@ public class UserRepository {
         return null;
     }
 
-    public boolean login(String username, String password){
+    public boolean login(String username, String password) {
         User u = getUser(username);
-        if(u == null) return false;
+        if (u == null) return false;
         return BCrypt.checkpw(password, new String(u.getPassword()));
     }
 
-    public boolean register(String username, String password){
-        User u = new User(username,password);
+    public boolean register(String username, String password) {
+        User u = new User(username, password);
         u.setBalance(250);
         try {
             addUser(u);
             return true;
-        } catch(Exception e){
+        } catch (Exception e) {
             System.out.println(e.getMessage());
             return false;
         }
     }
 
-    public int getBalance(String username){
+    public int getBalance(String username) {
         User u = getUser(username);
-        if(u == null) return -1;
+        if (u == null) return -1;
         return u.getBalance();
     }
 
-    public void withdraw(String username, int amount){
+    public void withdraw(String username, int amount) {
         User u = getUser(username);
-        if(u == null || u.getBalance() < amount) return;
-        u.setBalance(u.getBalance()-amount);
+        if (u == null || u.getBalance() < amount) return;
+        u.setBalance(u.getBalance() - amount);
         try {
             editUser(u);
         } catch (SQLException e) {
@@ -103,10 +104,10 @@ public class UserRepository {
         }
     }
 
-    public void deposit(String username, int amount){
+    public void deposit(String username, int amount) {
         User u = getUser(username);
-        if(u == null) return;
-        u.setBalance(u.getBalance()+amount);
+        if (u == null) return;
+        u.setBalance(u.getBalance() + amount);
         try {
             editUser(u);
         } catch (SQLException e) {
