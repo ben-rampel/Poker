@@ -36,5 +36,7 @@ public interface Table extends Iterator<Player> {
 
     List<Card> getCommonCards();
 
+    void setWinnerInfo(String s);
+
     String getWinnerInfo();
 }

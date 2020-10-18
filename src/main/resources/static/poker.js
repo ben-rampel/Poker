@@ -1,6 +1,6 @@
 'use strict';
-var hostname = "192.168.1.228";
-var app = angular.module('poker', ['ngStomp']);
+const hostname = window.location.host;
+let app = angular.module('poker', ['ngStomp']);
 app.controller('controller', function ($scope, $stomp, $log, $http) {
     let $ctrl = this;
     $ctrl.raiseBet = 0;
@@ -120,18 +120,19 @@ app.controller('controller', function ($scope, $stomp, $log, $http) {
     $scope.connectFunc = function () {
 
         console.log($scope.player);
-        $http.post('http://' + hostname + ':8080/login', [$scope.player, $scope.password])
+        $http.post('http://' + hostname + '/login', [$scope.player, $scope.password])
             .then(
                 function (data) {
                     //successful login
                     console.log(data);
                     $stomp
-                        .connect('http://' + hostname + ':8080/socket')
+                        .connect('http://' + hostname + '/socket')
                         // frame = CONNECTED headers
                         .then(function (frame) {
                             var url = '/poker/' + $scope.player;
                             var subscription = $stomp.subscribe(url, function (payload, headers, res) {
                                 $scope.currentGameData = payload;
+                                $scope.currentGameData.personalCards = $scope.currentGameData.personalCards.filter(x => x !== null);
                                 refreshBet();
                                 if ($scope.currentGameData.winner != null && $scope.displayWinner === false) {
                                     $scope.displayWinner = true;

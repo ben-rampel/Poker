@@ -1,5 +1,3 @@
-package tests;
-
 import poker.*;
 
 import java.util.Scanner;

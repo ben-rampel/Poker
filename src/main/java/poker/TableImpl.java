@@ -15,6 +15,10 @@ public class TableImpl implements Table {
     private int currentBet;
     private String winnerInfo;
 
+    public void setWinnerInfo(String winnerInfo) {
+        this.winnerInfo = winnerInfo;
+    }
+
     public TableImpl() {
         round = ROUND.BLINDS;
         deck = new Deck();
@@ -94,31 +98,28 @@ public class TableImpl implements Table {
     @Override
     public Player next() {
         if (hasNext()) {
-            int i = currentPlayerIndex + 1;
-            Player p = activePlayers().get(adjustedIndex(i));
-            for (; !p.isInRound(); i++) {
-                p =  activePlayers().get(adjustedIndex(i));
+            System.out.println(currentPlayerIndex+1);
+            Player n = players.get(adjustedIndex(++currentPlayerIndex));
+            while(!n.isInRound()) {
+                System.out.println("snode");
+                n = players.get(adjustedIndex(++currentPlayerIndex));
+                if(!hasTwoNext()) break;
             }
-            currentPlayerIndex = i;
-            if (!hasTwoNext()) {
-                for (Player player : players) {
-                    if (player.isInRound()) winnerInfo = player.getName() + " mucks";
-                }
-            }
-            return p;
+            System.out.println(n);
+            return n;
+            //return activePlayers().get(adjustedIndex(++currentPlayerIndex));
         } else {
             throw new IllegalStateException();
         }
     }
 
     private int adjustedIndex(int i) {
-        return i % activePlayers().size();
+        return i % players.size();
     }
 
     public ROUND getRound() {
         return round;
     }
-
 
     @Override
     public void nextRound() {
@@ -130,7 +131,7 @@ public class TableImpl implements Table {
             currentBet = 0;
         }
 
-        if (this.round.getRoundNum() > ROUND.PREFLOP.getRoundNum() && activePlayers().size() > 2) {
+       /* if (this.round.getRoundNum() > ROUND.PREFLOP.getRoundNum() && activePlayers().size() > 2) {
             for (int i = 0; i < activePlayers().size(); i++) {
                 if (activePlayers().get(adjustedIndex(i)).isDealer()) {
                     activePlayers().get(adjustedIndex(i)).setDealer(false);
@@ -139,7 +140,7 @@ public class TableImpl implements Table {
                     break;
                 }
             }
-        }
+        }*/
 
         if (this.round.getRoundNum() < 5) {
             this.round = ROUND.getRound(this.round.getRoundNum() + 1);

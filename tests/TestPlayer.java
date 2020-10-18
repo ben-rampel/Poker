@@ -1,5 +1,3 @@
-package tests;
-
 import poker.Card;
 import poker.Player;
 

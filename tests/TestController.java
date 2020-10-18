@@ -1,5 +1,3 @@
-package tests;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import poker.Table;
@@ -21,5 +19,9 @@ public class TestController extends TableController {
     public Future<Turn> sendTurnNotification(TurnNotification turnNotification) {
         System.out.println(turnNotification);
         return super.sendTurnNotification(turnNotification);
+    }
+
+    public TurnNotification getTurnNotification(){
+        return this.turnNotification;
     }
 }

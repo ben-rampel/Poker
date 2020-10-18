@@ -7,14 +7,13 @@ import poker.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
-import static poker.Turn.PlayerAction.BET;
-import static poker.Turn.PlayerAction.FOLD;
+import static poker.Turn.PlayerAction.*;
 
 public class TableController {
     private Table table;
     private Turn turn;
     private Turn newTurn;
-    private TurnNotification turnNotification;
+    protected TurnNotification turnNotification;
     private int dealerSeed = 0;
 
     public TableController(Table table) {
@@ -38,8 +37,8 @@ public class TableController {
 
         table.drawHoleCards();
         table.next().setDealer(true);
-        getBlind(new SmallBlindNotification(null));
-        getBlind(new BigBlindNotification(null));
+        Player small_blind = getBlind(new SmallBlindNotification(null));
+        Player big_blind = getBlind(new BigBlindNotification(null));
 
         if (turn.getBetAmount() != utils.bigBlind)
             throw new AssertionError("last bet amount not equal to big blind amount after big blind");
@@ -47,11 +46,15 @@ public class TableController {
         table.setCurrentBet((table.activePlayers().size() > 2) ? utils.bigBlind : 0);
 
         table.nextRound();
-        //if (table.activePlayers().size() < 3) table.nextRound();
+        small_blind.setBet(utils.smallBlind);
+        big_blind.setBet(utils.bigBlind);
 
         while (table.getRound().getRoundNum() < TableImpl.ROUND.INTERIM.getRoundNum()) {
             Player roundWinner = mainTurnLoop();
             if (roundWinner != null) {
+                for (Player player : table.getPlayers()) {
+                    if (player.isInRound()) table.setWinnerInfo(player.getName() + " mucks");
+                }
                 return new AsyncResult<>(roundWinner);
             }
             table.nextRound();
@@ -66,52 +69,61 @@ public class TableController {
 
     private Player mainTurnLoop() throws ExecutionException, InterruptedException {
         int turnsPlayed = 0;
+        Player initialPlayer = null;
         while (table.hasNext()) {
             Player next = table.next();
+            if(turnsPlayed == 0) {
+                initialPlayer = next;
+            }
             Future<Turn> t;
-            if (table.getCurrentBet() > 0) {
-                if(next.getBet() > 0) {
-                    t = sendTurnNotification(new LockedTurnNotification(next, table.getCurrentBet() - next.getBet()));
-                } else {
-                    t = sendTurnNotification(new StakedTurnNotification(next, table.getCurrentBet()));
-                }
+            if(table.getCurrentBet() > 0 && next.getBet() == table.getCurrentBet()) {
+                turn = new Turn(next, CHECK, 0);
+                turnsPlayed++;
             } else {
-                t = sendTurnNotification(new OpenTurnNotification(next));
-            }
-            for (int i = 0; i < 1000; ) {
-                if (t.isDone()) {
-                    turn = t.get();
-                    turnsPlayed++;
-                    break;
+                if (table.getCurrentBet() > 0) {
+                    if (next.getBet() > 0) {
+                        t = sendTurnNotification(new LockedTurnNotification(next, table.getCurrentBet() - next.getBet()));
+                    } else {
+                        t = sendTurnNotification(new StakedTurnNotification(next, table.getCurrentBet()));
+                    }
                 } else {
-                    Thread.sleep(100);
-                    i++;
+                    t = sendTurnNotification(new OpenTurnNotification(next));
                 }
-            }
-            if (table.getCurrentBet() > 0) {
-                if (turn.getAction() == Turn.PlayerAction.CALL || turn.getAction() == Turn.PlayerAction.RAISE) {
-                    turn.getPlayer().bet(turn.getBetAmount());
-                    table.addToPot(turn.getBetAmount());
-                    table.setCurrentBet(turn.getBetAmount());
-                } else {
-                    turn.getPlayer().setInRound(false);
-                    if (table.activePlayers().size() < 2) {
-                        return table.next();
+                for (int i = 0; i < 1000; ) {
+                    if (t.isDone()) {
+                        turn = t.get();
+                        turnsPlayed++;
+                        break;
+                    } else {
+                        Thread.sleep(100);
+                        i++;
                     }
                 }
-            } else {
-                if (turn.getAction() == Turn.PlayerAction.BET) {
-                    turn.getPlayer().bet(turn.getBetAmount());
-                    table.addToPot(turn.getBetAmount());
-                    table.setCurrentBet(turn.getBetAmount());
-                } else if (turn.getAction() == FOLD) {
-                    turn.getPlayer().setInRound(false);
-                    if (table.activePlayers().size() < 2) {
-                        return table.next();
+                if (table.getCurrentBet() > 0) {
+                    if (turn.getAction() == Turn.PlayerAction.CALL || turn.getAction() == Turn.PlayerAction.RAISE) {
+                        turn.getPlayer().bet(turn.getBetAmount());
+                        table.addToPot(turn.getBetAmount());
+                        table.setCurrentBet(turn.getBetAmount());
+                    } else {
+                        turn.getPlayer().setInRound(false);
+                        if (table.activePlayers().size() < 2) {
+                            return table.next();
+                        }
+                    }
+                } else {
+                    if (turn.getAction() == Turn.PlayerAction.BET) {
+                        turn.getPlayer().bet(turn.getBetAmount());
+                        table.addToPot(turn.getBetAmount());
+                        table.setCurrentBet(turn.getBetAmount());
+                    } else if (turn.getAction() == FOLD) {
+                        turn.getPlayer().setInRound(false);
+                        if (table.activePlayers().size() < 2) {
+                            return table.next();
+                        }
                     }
                 }
             }
-            if (next.isDealer() || turnsPlayed >= table.activePlayers().size()) {
+            if ((next == initialPlayer && turnsPlayed > 1) || turnsPlayed >= table.activePlayers().size()) {
                 boolean allInPlayersMatchedBet = true;
                 for(Player p : table.activePlayers()){
                     if(p.getBet() != table.getCurrentBet()) allInPlayersMatchedBet = false;
@@ -122,11 +134,12 @@ public class TableController {
         throw new IllegalStateException("Turn loop ended without getting back to dealer or finding a winner");
     }
 
-    private void getBlind(TurnNotification blind) throws ExecutionException, InterruptedException {
+    private Player getBlind(TurnNotification blind) {
         Player currentPlayer = table.next();
         turn = new Turn(currentPlayer, BET, blind.getRequiredBet());
         currentPlayer.bet(blind.getRequiredBet());
         table.addToPot(blind.getRequiredBet());
+        return currentPlayer;
     }
 
     @Async

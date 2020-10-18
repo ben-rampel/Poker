@@ -110,7 +110,8 @@
             <p ng-if="currentGameData.personalCards[0] != null">Your Cards:</p>
             <p ng-if="currentGameData.personalCards[0] != null" ng-repeat="card in currentGameData.personalCards">
                 <img class="cardimg"
-                     src="{{(currentGameData.personalCards[0] != null) ? $ctrl.getCardUrl(card.rank,card.suit) : ''}}"/>
+                     src="{{(currentGameData.personalCards[0] != null) ? $ctrl.getCardUrl(card.rank,card.suit) : ''}}"
+                />
             </p>
             <div style="margin-bottom: 4px;" class="input-group" ng-if="currentGameData.turnNotification != null"
                  ng-repeat="option in currentGameData.turnNotification.options">

@@ -1,5 +1,3 @@
-package tests;
-
 import org.junit.Test;
 import poker.Card;
 
