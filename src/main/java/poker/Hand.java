@@ -2,7 +2,8 @@ package poker;
 
 import java.util.*;
 
-import static poker.utils.*;
+import static poker.utils.isFlush;
+import static poker.utils.isStraight;
 
 public class Hand implements Comparable<Hand> {
     public enum handName {

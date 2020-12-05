@@ -67,7 +67,17 @@ app.controller('controller', function ($scope, $stomp, $log, $http) {
                 }
             });
             console.log("Player called " + $ctrl.bet);
-        } else if(action === "BET") {
+        } else if (action === "ALLIN") {
+            //send allin message
+            $stomp.send('/app/sendTurn', {
+                message: {
+                    "action": "ALLIN",
+                    "betAmount": 0,
+                    "player": $scope.player
+                }
+            });
+            console.log("Player all inned");
+        } else if (action === "BET") {
             $stomp.send('/app/sendTurn', {
                 message: {
                     "action": "BET",

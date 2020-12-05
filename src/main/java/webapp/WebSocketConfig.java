@@ -36,11 +36,12 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         return new TableController(new TableImpl());
     }
 
-    @Bean public String[] databaseParameters() {
+    @Bean
+    public String[] databaseParameters() {
         String[] params = new String[3];
         try {
             Scanner in = new Scanner(new File("/home/ben/Documents/pokerdb-conf.txt"));
-            for(int i = 0; i < 3; i++){
+            for (int i = 0; i < 3; i++) {
                 params[i] = in.nextLine();
             }
             return params;

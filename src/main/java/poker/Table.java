@@ -2,13 +2,18 @@ package poker;
 
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 public interface Table extends Iterator<Player> {
     List<Player> activePlayers();
 
     void drawHoleCards();
 
-    void addToPot(int i);
+    List<Pot> getPots();
+
+    void addPot(Pot pot);
+
+    void addToPot(int i, Player player);
 
     void addPlayer(Player player);
 
@@ -24,7 +29,7 @@ public interface Table extends Iterator<Player> {
 
     boolean hasTwoNext();
 
-    Player getShowdownWinner();
+    Map<Player, Integer> getShowdownWinners();
 
     Player getPlayerFromName(String name);
 
@@ -39,4 +44,5 @@ public interface Table extends Iterator<Player> {
     void setWinnerInfo(String s);
 
     String getWinnerInfo();
+
 }

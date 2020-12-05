@@ -7,9 +7,9 @@ package poker;
 public class Turn {
     public enum PlayerAction {FOLD, CHECK, CALL, RAISE, BET, ALLIN}
 
-    private int betAmount;
-    private PlayerAction action;
-    private Player player;
+    private final int betAmount;
+    private final PlayerAction action;
+    private final Player player;
 
     public Turn(Player player, PlayerAction action, int betAmount) {
         this.betAmount = betAmount;

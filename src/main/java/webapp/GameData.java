@@ -2,17 +2,34 @@ package webapp;
 
 import poker.Card;
 import poker.Player;
+import poker.Pot;
 import poker.TurnNotification;
 
 import java.util.Map;
 
 public class GameData {
+    private int pot;
+    private Card[] commonCards;
+    private Card[] personalCards;
+    private Player[] players;
+    private Pot[] sidePots;
+    private Player winner;
+    private String winnerInfo;
+
     public int getPot() {
         return pot;
     }
 
     public void setPot(int pot) {
         this.pot = pot;
+    }
+
+    public Pot[] getSidePots() {
+        return sidePots;
+    }
+
+    public void setSidePots(Pot[] sidePots) {
+        this.sidePots = sidePots;
     }
 
     public Card[] getCommonCards() {
@@ -47,11 +64,6 @@ public class GameData {
         this.turnNotification = turnNotification;
     }
 
-    private int pot;
-    private Card[] commonCards;
-    private Card[] personalCards;
-    private Player[] players;
-
     public String getWinnerInfo() {
         return winnerInfo;
     }
@@ -60,7 +72,6 @@ public class GameData {
         this.winnerInfo = winnerInfo;
     }
 
-    private String winnerInfo;
 
     public Player getWinner() {
         return winner;
@@ -69,9 +80,6 @@ public class GameData {
     public void setWinner(Player winner) {
         this.winner = winner;
     }
-
-    private Player winner;
-
 
     public Map<String, Boolean> getFolded() {
         return folded;

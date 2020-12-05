@@ -45,7 +45,8 @@ public class newTest {
         tableController.receiveTurn(new Turn(p_list.get(4), Turn.PlayerAction.FOLD, 0));
         Thread.sleep(400);
         System.out.println(Arrays.toString(tableController.getTable().activePlayers().stream().map(Player::getName).toArray()));
-        assertEquals(p_list.get(0), tableController.getTurnNotification().getPlayer());
+
+        assertEquals(p_list.get(0).getName(), tableController.getTurnNotification().getPlayer().getName());
 
         tableController.receiveTurn(new Turn(p_list.get(0), Turn.PlayerAction.FOLD, 0));
         Thread.sleep(400);

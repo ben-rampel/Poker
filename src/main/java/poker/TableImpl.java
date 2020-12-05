@@ -10,10 +10,11 @@ public class TableImpl implements Table {
     private Deck deck;
     protected List<Card> commonCards;
     private List<Player> players;
-    private int potSize;
     private int currentPlayerIndex;
-    private int currentBet;
     private String winnerInfo;
+    private List<Pot> pots;
+    private int lastActivePlayerSize;
+
 
     public void setWinnerInfo(String winnerInfo) {
         this.winnerInfo = winnerInfo;
@@ -24,16 +25,24 @@ public class TableImpl implements Table {
         deck = new Deck();
         commonCards = new ArrayList<>();
         players = new ArrayList<>();
-        potSize = 0;
+        pots = new LinkedList<>();
+        Pot main = new Pot(0);
+        main.setMain(true);
+        pots.add(main);
+        lastActivePlayerSize = 0;
         currentPlayerIndex = 0;
     }
 
     public TableImpl(List<Player> players, int dealerSeed) {
+        pots = new LinkedList<>();
+        Pot main = new Pot(0);
+        main.setMain(true);
+        pots.add(main);
         round = ROUND.BLINDS;
         deck = new Deck();
+        lastActivePlayerSize = 0;
         commonCards = new ArrayList<>();
         this.players = players;
-        potSize = 0;
         currentPlayerIndex = dealerSeed;
         for (Player p : players) {
             p.setDealer(false);
@@ -62,28 +71,50 @@ public class TableImpl implements Table {
 
     @Override
     public int getCurrentBet() {
-        return currentBet;
+        return this.pots.get(0).getBet();
     }
 
     @Override
     public void setCurrentBet(int amt) {
-        this.currentBet = Math.max(amt, currentBet);
+        this.pots.get(0).setBet(amt);
     }
 
     @Override
-    public Player getShowdownWinner() {
-        TreeMap<Hand, Player> bestHandMap = new TreeMap<>();
-        for (Player p : activePlayers()) {
-            bestHandMap.put(p.bestHand(commonCards.toArray(new Card[0])), p);
+    public Map<Player, Integer> getShowdownWinners() {
+        Map<Player, Integer> results = new LinkedHashMap<>();
+        for (int i = 0; i < pots.size(); i++) {
+            TreeMap<Hand, Player> bestHandMap = new TreeMap<>();
+            for (Player p : pots.get(i).getPlayers()) {
+                bestHandMap.put(p.bestHand(commonCards.toArray(new Card[0])), p);
+            }
+            Player best = bestHandMap.lastEntry().getValue();
+            if (results.containsKey(best)) {
+                results.replace(best, results.get(best) + pots.get(i).getAmount());
+            } else {
+                results.put(best, pots.get(i).getAmount());
+            }
+            if (i == 0)
+                winnerInfo = bestHandMap.lastEntry().getValue().getName() + " wins with " + bestHandMap.lastEntry().getKey().toString();
         }
-        winnerInfo = bestHandMap.lastEntry().getValue().getName() + " wins with " + bestHandMap.lastEntry().getKey().toString();
-        return bestHandMap.lastEntry().getValue();
+
+        return results;
     }
 
     @Override
-    public void addToPot(int i) {
-        potSize += i;
+    public void addToPot(int i, Player p) {
+        pots.get(0).add(p, i);
     }
+
+    @Override
+    public List<Pot> getPots() {
+        return this.pots;
+    }
+
+    @Override
+    public void addPot(Pot pot) {
+        this.pots.add(pot);
+    }
+
 
     @Override
     public boolean hasNext() {
@@ -92,29 +123,21 @@ public class TableImpl implements Table {
 
     @Override
     public boolean hasTwoNext() {
-       return activePlayers().size() > 1;
+        return activePlayers().size() > 1;
     }
 
     @Override
     public Player next() {
         if (hasNext()) {
-            System.out.println(currentPlayerIndex+1);
-            Player n = players.get(adjustedIndex(++currentPlayerIndex));
-            while(!n.isInRound()) {
-                System.out.println("snode");
-                n = players.get(adjustedIndex(++currentPlayerIndex));
-                if(!hasTwoNext()) break;
+            currentPlayerIndex = (currentPlayerIndex + 1) % activePlayers().size();
+            if (lastActivePlayerSize > activePlayers().size()) {
+                currentPlayerIndex -= (lastActivePlayerSize - activePlayers().size());
             }
-            System.out.println(n);
-            return n;
-            //return activePlayers().get(adjustedIndex(++currentPlayerIndex));
+            lastActivePlayerSize = activePlayers().size();
+            return activePlayers().get(currentPlayerIndex);
         } else {
             throw new IllegalStateException();
         }
-    }
-
-    private int adjustedIndex(int i) {
-        return i % players.size();
     }
 
     public ROUND getRound() {
@@ -123,12 +146,12 @@ public class TableImpl implements Table {
 
     @Override
     public void nextRound() {
-        for(Player p : activePlayers()){
+        for (Player p : activePlayers()) {
             p.setBet(0);
         }
 
         if (this.round != ROUND.BLINDS) {
-            currentBet = 0;
+            this.setCurrentBet(0);
         }
 
        /* if (this.round.getRoundNum() > ROUND.PREFLOP.getRoundNum() && activePlayers().size() > 2) {
@@ -168,7 +191,7 @@ public class TableImpl implements Table {
     }
 
     public int getPotSize() {
-        return potSize;
+        return pots.get(0).getAmount();
     }
 
     public List<Card> getCommonCards() {
@@ -184,7 +207,8 @@ public class TableImpl implements Table {
     @Override
     public Player getPlayerFromSessionID(String sessionID) {
         for (Player player : players) if (player.getWebsocketsSession().equals(sessionID)) return player;
-        throw new NoSuchElementException();    }
+        throw new NoSuchElementException();
+    }
 
     @Override
     public List<Player> getPlayers() {
@@ -217,12 +241,11 @@ public class TableImpl implements Table {
         }
     }
 
-    public List<Player> activePlayers(){
+    public List<Player> activePlayers() {
         List<Player> results = new ArrayList<>();
         players.forEach(player -> {
-            if(player.isInRound()) results.add(player);
+            if (player.isInRound()) results.add(player);
         });
         return results;
     }
-
 }

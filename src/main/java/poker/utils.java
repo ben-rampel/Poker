@@ -2,7 +2,10 @@ package poker;
 
 import other_stuff.SetOperations;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
 
 import static poker.Card.Rank.aceLow;
 

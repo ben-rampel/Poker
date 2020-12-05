@@ -1,8 +1,11 @@
 package poker;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
-import static poker.utils.*;
+import static poker.utils.getAllHands;
 
 /*
  * Player

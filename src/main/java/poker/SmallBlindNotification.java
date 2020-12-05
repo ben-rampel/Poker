@@ -4,7 +4,8 @@ package poker;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import static poker.Turn.PlayerAction.*;
+import static poker.Turn.PlayerAction.CALL;
+import static poker.Turn.PlayerAction.FOLD;
 
 public class SmallBlindNotification extends TurnNotification {
     public SmallBlindNotification(Player player) {

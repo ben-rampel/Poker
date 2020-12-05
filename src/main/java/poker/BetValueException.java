@@ -1,7 +1,5 @@
 package poker;
 
-import poker.Player;
-
 public class BetValueException extends RuntimeException {
     private Player player;
 

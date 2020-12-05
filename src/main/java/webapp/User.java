@@ -8,7 +8,7 @@ public class User {
     private String avatar;
     private int balance;
 
-    public User(String username, String unhashedPassword){
+    public User(String username, String unhashedPassword) {
         this.username = username;
         this.password = BCrypt.hashpw(unhashedPassword, BCrypt.gensalt()).getBytes();
     }
@@ -16,6 +16,7 @@ public class User {
     public User() {
 
     }
+
     public String getUsername() {
         return username;
     }
@@ -32,7 +33,7 @@ public class User {
         this.password = BCrypt.hashpw(unhashedPassword, BCrypt.gensalt()).getBytes();
     }
 
-    public void setPassword(byte[] password){
+    public void setPassword(byte[] password) {
         this.password = password;
     }
 

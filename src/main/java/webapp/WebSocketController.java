@@ -3,12 +3,11 @@ package webapp;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.json.JSONObject;
-import org.springframework.messaging.MessageHeaders;
-import org.springframework.ui.Model;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.EventListener;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.handler.annotation.MessageExceptionHandler;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
@@ -17,12 +16,16 @@ import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 import org.springframework.web.socket.messaging.SessionSubscribeEvent;
 import poker.Card;
 import poker.Player;
+import poker.Pot;
 import poker.Turn;
 
 import javax.annotation.PostConstruct;
@@ -39,10 +42,10 @@ public class WebSocketController {
     private final SimpMessageSendingOperations messagingTemplate;
     private final TableController tableController;
     private final UserRepository userRepository;
-    private Future<Player> winner;
+    private Future<Map<Player, Integer>> winners;
 
     @Autowired
-    public WebSocketController(SimpMessageSendingOperations messagingTemplate, TableController tableController, UserRepository userRepository) throws ClassNotFoundException {
+    public WebSocketController(SimpMessageSendingOperations messagingTemplate, TableController tableController, UserRepository userRepository) {
         this.messagingTemplate = messagingTemplate;
         this.tableController = tableController;
         this.userRepository = userRepository;
@@ -53,12 +56,14 @@ public class WebSocketController {
         Thread gameThread = new Thread(() -> {
             while (true) {
                 try {
-                    winner = tableController.startRound();
-                    while (!winner.isDone()) {
+                    winners = tableController.startRound();
+                    while (!winners.isDone()) {
                         Thread.sleep(1000);
                     }
-                    if(winner != null) {
-                        winner.get().receiveWinnings(tableController.getTable().getPotSize());
+                    if (winners != null) {
+                        for (Map.Entry<Player, Integer> winner : winners.get().entrySet()) {
+                            winner.getKey().receiveWinnings(winner.getValue());
+                        }
                     }
                     Thread.sleep(6000);
                 } catch (Exception e) {
@@ -96,6 +101,8 @@ public class WebSocketController {
         currentGameData.setPot(tableController.getTable().getPotSize());
         currentGameData.setCommonCards(tableController.getTable().getCommonCards().toArray(new Card[0]));
         currentGameData.setPersonalCards(p.getHole());
+        int l = tableController.getTable().getPots().size();
+        currentGameData.setSidePots(tableController.getTable().getPots().stream().filter(x -> !x.isMain()).toArray(Pot[]::new));
         currentGameData.setPlayers(tableController.getTable().getPlayers().toArray(new Player[0]));
         for (Player player : tableController.getTable().getPlayers()) {
             foldedMap.put(player.getName(), player.isInRound());
@@ -105,9 +112,9 @@ public class WebSocketController {
             currentGameData.setTurnNotification(tableController.getTurnNotification());
         }
         try {
-            if (winner.isDone()) {
-                if(winner != null){
-                    currentGameData.setWinner(winner.get());
+            if (winners.isDone()) {
+                if (winners != null) {
+                    currentGameData.setWinner(winners.get().keySet().toArray(new Player[0])[0]);
                     currentGameData.setWinnerInfo(tableController.getTable().getWinnerInfo());
                 } else {
                     currentGameData.setWinner(null);
@@ -153,7 +160,7 @@ public class WebSocketController {
             } else {
                 tableController.getTable().addPlayer(new Player(username, 0));
             }
-            if(tableController.getTable().activePlayers().size() > 2) {
+            if (tableController.getTable().activePlayers().size() > 2) {
                 tableController.getTable().getPlayerFromName(username).setInRound(false);
             }
             return new ResponseEntity<>(HttpStatus.OK);
@@ -187,7 +194,7 @@ public class WebSocketController {
     @EventListener
     public void onSubscribeEvent(SessionSubscribeEvent event) {
         MessageHeaders headers = event.getMessage().getHeaders();
-        if(!((String) headers.get("simpDestination")).contains("error")){
+        if (!((String) headers.get("simpDestination")).contains("error")) {
             String sessionID = (String) headers.get("simpSessionId");
             String user = (((String) headers.get("simpDestination")).split("/")[2]);
             tableController.getTable().getPlayerFromName(user).setWebsocketsSession(sessionID);

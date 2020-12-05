@@ -156,6 +156,7 @@
             </div>
 
             <div class="potAmount">
+                <p ng-repeat="sidePot in currentGameData.sidePots">{{sidePot.amount}}</p>
                 <span>Pot: </span>
                 <span ng-bind="currentGameData.pot"></span>
             </div>
