@@ -134,7 +134,11 @@ public class TableImpl implements Table {
                 currentPlayerIndex -= (lastActivePlayerSize - activePlayers().size());
             }
             lastActivePlayerSize = activePlayers().size();
-            return activePlayers().get(currentPlayerIndex);
+            try {
+                return activePlayers().get(currentPlayerIndex);
+            } catch(IndexOutOfBoundsException e) {
+                return activePlayers().get(0);
+            }
         } else {
             throw new IllegalStateException();
         }
@@ -149,11 +153,7 @@ public class TableImpl implements Table {
         for (Player p : activePlayers()) {
             p.setBet(0);
         }
-
-        if (this.round != ROUND.BLINDS) {
-            this.setCurrentBet(0);
-        }
-
+        this.setCurrentBet(0);
        /* if (this.round.getRoundNum() > ROUND.PREFLOP.getRoundNum() && activePlayers().size() > 2) {
             for (int i = 0; i < activePlayers().size(); i++) {
                 if (activePlayers().get(adjustedIndex(i)).isDealer()) {
@@ -173,6 +173,7 @@ public class TableImpl implements Table {
 
         switch (this.round) {
             case PREFLOP:
+                nextRound();
                 break;
             case FLOP:
                 for (int i = 0; i < 3; i++) {

@@ -52,17 +52,9 @@ public class TableController {
         Player small_blind = getBlind(new SmallBlindNotification(null));
         Player big_blind = getBlind(new BigBlindNotification(null));
 
-        if (turn.getBetAmount() != utils.bigBlind)
-            throw new AssertionError("last bet amount not equal to big blind amount after big blind");
-
-        table.setCurrentBet((table.activePlayers().size() > 2) ? utils.bigBlind : 0);
-
-        table.nextRound();
-        small_blind.setBet(utils.smallBlind);
-        big_blind.setBet(utils.bigBlind);
 
         while (table.getRound().getRoundNum() < TableImpl.ROUND.INTERIM.getRoundNum()) {
-            Player roundWinner = mainTurnLoop();
+            Player roundWinner = mainTurnLoop(table.getRound() == TableImpl.ROUND.BLINDS ? small_blind : null);
             if (roundWinner != null) {
                 for (Player player : table.getPlayers()) {
                     if (player.isInRound()) table.setWinnerInfo(player.getName() + " mucks");
@@ -80,9 +72,12 @@ public class TableController {
         throw new IllegalStateException("round ended with no winner");
     }
 
-    private Player mainTurnLoop() throws ExecutionException, InterruptedException {
+    private Player mainTurnLoop(Player initial_player) throws ExecutionException, InterruptedException {
         int turnsPlayed = 0;
-        Player initialPlayer = null;
+        Player initialPlayer = initial_player;
+        if (getTable().getRound() == TableImpl.ROUND.BLINDS){
+            turnsPlayed = 2;
+        }
         while (table.hasNext()) {
             System.out.println(turnsPlayed);
             Player next = table.next();
@@ -96,7 +91,8 @@ public class TableController {
             } else {
                 if (table.getCurrentBet() > 0) {
                     if (next.getBet() > 0) {
-                        t = sendTurnNotification(new LockedTurnNotification(next, table.getCurrentBet() - next.getBet()));
+                        // t = sendTurnNotification(new LockedTurnNotification(next, table.getCurrentBet() - next.getBet()));
+                        t = sendTurnNotification(new StakedTurnNotification(next, table.getCurrentBet() - next.getBet()));
                     } else {
                         t = sendTurnNotification(new StakedTurnNotification(next, table.getCurrentBet()));
                     }
