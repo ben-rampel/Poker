@@ -31,6 +31,7 @@ import poker.Turn;
 import javax.annotation.PostConstruct;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
@@ -52,22 +53,18 @@ public class WebSocketController {
     }
 
     @PostConstruct
-    public void start() {
+    public synchronized void start() throws InterruptedException {
         Thread gameThread = new Thread(() -> {
-            while (true) {
+            while(true) {
                 try {
                     winners = tableController.startRound();
-                    while (!winners.isDone()) {
-                        Thread.sleep(1000);
+                    Map<Player, Integer> winners_ = winners.get();
+                    for (Map.Entry<Player, Integer> winner : winners_.entrySet()) {
+                        winner.getKey().receiveWinnings(winner.getValue());
                     }
-                    if (winners != null) {
-                        for (Map.Entry<Player, Integer> winner : winners.get().entrySet()) {
-                            winner.getKey().receiveWinnings(winner.getValue());
-                        }
-                    }
-                    Thread.sleep(6000);
-                } catch (Exception e) {
-                    e.printStackTrace();
+                    System.out.println("Game finished.");
+                    Thread.sleep(4000);
+                } catch (Exception ignored) {
                 }
             }
         });
@@ -101,7 +98,7 @@ public class WebSocketController {
         currentGameData.setPot(tableController.getTable().getPotSize());
         currentGameData.setCommonCards(tableController.getTable().getCommonCards().toArray(new Card[0]));
         currentGameData.setPersonalCards(p.getHole());
-        int l = tableController.getTable().getPots().size();
+        //int l = tableController.getTable().getPots().size();
         currentGameData.setSidePots(tableController.getTable().getPots().stream().filter(x -> !x.isMain()).toArray(Pot[]::new));
         currentGameData.setPlayers(tableController.getTable().getPlayers().toArray(new Player[0]));
         for (Player player : tableController.getTable().getPlayers()) {
@@ -163,6 +160,7 @@ public class WebSocketController {
             if (tableController.getTable().activePlayers().size() > 2) {
                 tableController.getTable().getPlayerFromName(username).setInRound(false);
             }
+            tableController.unblock();
             return new ResponseEntity<>(HttpStatus.OK);
         }
         return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
@@ -186,9 +184,12 @@ public class WebSocketController {
     public void onDisconnectEvent(SessionDisconnectEvent event) {
         MessageHeaders headers = event.getMessage().getHeaders();
         String sessionID = (String) headers.get("simpSessionId");
-        Player toBeRemoved = tableController.getTable().getPlayerFromSessionID(sessionID);
-        userRepository.deposit(toBeRemoved.getName(), toBeRemoved.getChips());
-        tableController.removePlayer(toBeRemoved);
+        try {
+            Player toBeRemoved = tableController.getTable().getPlayerFromSessionID(sessionID);
+            userRepository.deposit(toBeRemoved.getName(), toBeRemoved.getChips());
+            tableController.removePlayer(toBeRemoved);
+            tableController.unblock();
+        } catch (NoSuchElementException ignored) {}
     }
 
     @EventListener

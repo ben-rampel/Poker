@@ -29,7 +29,7 @@ public class Pot {
 
     public Pot split(Player player, int amount) {
         Pot sidePot = new Pot(bet - amount);
-        bets.keySet().forEach(Player::clearHole);
+        //.keySet().forEach(Player::clearHole);
         for (Player p : bets.keySet()) {
             if (p != player) {
                 sidePot.getBets().put(p, bet - amount);

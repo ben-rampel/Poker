@@ -2,6 +2,7 @@ package webapp;
 
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.AsyncResult;
+import org.springframework.stereotype.Service;
 import poker.*;
 
 import java.util.HashMap;
@@ -11,6 +12,7 @@ import java.util.concurrent.Future;
 
 import static poker.Turn.PlayerAction.*;
 
+@Service
 public class TableController {
     private Table table;
     private Turn turn;
@@ -23,14 +25,18 @@ public class TableController {
         this.newTurn = null;
     }
 
+    public synchronized void unblock(){
+        this.notifyAll();
+    }
+
     @Async
-    public Future<Map<Player, Integer>> startRound() throws ExecutionException, InterruptedException {
+    public synchronized Future<Map<Player, Integer>> startRound() throws ExecutionException, InterruptedException {
         table = new TableImpl(this.table.getPlayers(), dealerSeed);
         dealerSeed++;
         turn = null;
         newTurn = null;
         turnNotification = null;
-        System.out.println("started");
+        System.out.println("-------Started Game-------");
         for (Player p : getTable().getPlayers()) {
             if (p.getChips() < 2) {
                 p.setInRound(false);
@@ -42,15 +48,14 @@ public class TableController {
                     p.setInRound(false);
                 }
             }
-            Thread.sleep(10000);
-            System.out.println("waiting for players...");
+            this.wait();
         }
 
         //Post Blinds
         table.drawHoleCards();
         table.next().setDealer(true);
         Player small_blind = getBlind(new SmallBlindNotification(null));
-        Player big_blind = getBlind(new BigBlindNotification(null));
+        getBlind(new BigBlindNotification(null));
 
 
         while (table.getRound().getRoundNum() < TableImpl.ROUND.INTERIM.getRoundNum()) {
@@ -72,43 +77,43 @@ public class TableController {
         throw new IllegalStateException("round ended with no winner");
     }
 
-    private Player mainTurnLoop(Player initial_player) throws ExecutionException, InterruptedException {
+    private synchronized Player mainTurnLoop(Player initial_player) throws InterruptedException {
         int turnsPlayed = 0;
         Player initialPlayer = initial_player;
         if (getTable().getRound() == TableImpl.ROUND.BLINDS){
             turnsPlayed = 2;
         }
         while (table.hasNext()) {
-            System.out.println(turnsPlayed);
             Player next = table.next();
             if (turnsPlayed == 0) {
                 initialPlayer = next;
             }
-            Future<Turn> t;
+            if (table.activePlayers().size() < 2) {
+                return table.next();
+            }
             if (table.getCurrentBet() > 0 && next.getBet() == table.getCurrentBet()) {
                 turn = new Turn(next, CHECK, 0);
                 turnsPlayed++;
             } else {
                 if (table.getCurrentBet() > 0) {
                     if (next.getBet() > 0) {
-                        // t = sendTurnNotification(new LockedTurnNotification(next, table.getCurrentBet() - next.getBet()));
-                        t = sendTurnNotification(new StakedTurnNotification(next, table.getCurrentBet() - next.getBet()));
+                        sendTurnNotification(new StakedTurnNotification(next, table.getCurrentBet() - next.getBet()));
                     } else {
-                        t = sendTurnNotification(new StakedTurnNotification(next, table.getCurrentBet()));
+                        sendTurnNotification(new StakedTurnNotification(next, table.getCurrentBet()));
                     }
                 } else {
-                    t = sendTurnNotification(new OpenTurnNotification(next));
+                    sendTurnNotification(new OpenTurnNotification(next));
                 }
-                for (int i = 0; i < 1000; ) {
-                    if (t.isDone()) {
-                        turn = t.get();
-                        turnsPlayed++;
-                        break;
-                    } else {
-                        Thread.sleep(100);
-                        i++;
+                while (newTurn == null) {
+                    this.wait();
+                    if (table.activePlayers().size() < 2) {
+                        return table.next();
                     }
                 }
+                turnNotification = null;
+                turn = newTurn;
+                newTurn = null;
+                turnsPlayed++;
                 if (table.getCurrentBet() > 0) {
                     if (turn.getAction() == Turn.PlayerAction.CALL || turn.getAction() == Turn.PlayerAction.RAISE) {
                         turn.getPlayer().bet(turn.getBetAmount());
@@ -122,9 +127,6 @@ public class TableController {
 
                     } else {
                         turn.getPlayer().setInRound(false);
-                        if (table.activePlayers().size() < 2) {
-                            return table.next();
-                        }
                     }
                 } else {
                     if (turn.getAction() == Turn.PlayerAction.BET) {
@@ -158,35 +160,22 @@ public class TableController {
         return currentPlayer;
     }
 
-    @Async
-    public Future<Turn> sendTurnNotification(TurnNotification turnNotification) {
+    public void sendTurnNotification(TurnNotification turnNotification) {
         if (turnNotification.getPlayer().getChips() < turnNotification.getMinimumBet() ||
                 turnNotification.getPlayer().getChips() < turnNotification.getRequiredBet()) {
             turnNotification = new AllInTurnNotification(turnNotification.getPlayer());
         }
         this.turnNotification = turnNotification;
-        while (true) {
-            try {
-                if (newTurn != null && newTurn.getBetAmount() <= newTurn.getPlayer().getChips()) {
-                    break;
-                }
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-        Future<Turn> result = new AsyncResult<>(newTurn);
-        newTurn = null;
-        this.turnNotification = null;
-        return result;
     }
+
 
     public Table getTable() {
         return table;
     }
 
-    public void receiveTurn(Turn turn) {
+    public synchronized void receiveTurn(Turn turn) {
         newTurn = turn;
+        this.notifyAll();
     }
 
     TurnNotification getTurnNotification() {

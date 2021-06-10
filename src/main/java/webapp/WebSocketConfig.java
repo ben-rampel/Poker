@@ -7,6 +7,7 @@ import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
+import poker.Table;
 import poker.TableImpl;
 
 import java.io.File;
@@ -32,9 +33,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     }
 
     @Bean
-    public TableController getTableController() {
-        return new TableController(new TableImpl());
-    }
+    public Table getTable() {return new TableImpl();}
 
     @Bean
     public String[] databaseParameters() {

@@ -22,7 +22,7 @@ public class newTest {
                 tableController.getTable().addPlayer(new Player("Bob", 250));
                 tableController.getTable().addPlayer(new Player("Carl", 250));
                 tableController.getTable().addPlayer(new Player("Joe", 250));
-                tableController.getTable().addPlayer(new Player("Sneed", 250));
+                tableController.getTable().addPlayer(new Player("Takeshi", 250));
                 tableController.getTable().addPlayer(new Player("Chuck", 250));
                 tableController.startRound();
                 System.out.println(tableController.getTable().getWinnerInfo());
