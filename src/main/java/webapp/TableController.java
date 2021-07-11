@@ -1,166 +1,148 @@
 package webapp;
 
-import org.springframework.scheduling.annotation.Async;
-import org.springframework.scheduling.annotation.AsyncResult;
-import org.springframework.stereotype.Service;
 import poker.*;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 
-import static poker.Turn.PlayerAction.*;
+import static poker.Turn.PlayerAction.ALLIN;
+import static poker.Turn.PlayerAction.FOLD;
 
-@Service
-public class TableController {
-    private Table table;
-    private Turn turn;
-    private Turn newTurn;
+public class TableController extends Observable {
+    private Table table = new TableImpl();
+    private Queue<Turn> turns = new LinkedList<>();
+    private Player initialPlayer = null;
+    private int turnsPlayed = 0;
     protected TurnNotification turnNotification;
     private int dealerSeed = 0;
+    public enum State {STARTING, READY, PROCESSING, DONE}
+    private State state = State.STARTING;
 
-    public TableController(Table table) {
-        this.table = table;
-        this.newTurn = null;
+    public synchronized Map<Player, Integer> startRound() throws ExecutionException, InterruptedException{
+        initialize();
+        while(table.getRound().compareTo(TableImpl.ROUND.INTERIM) < 0 && table.activePlayers().size() >= 2){
+            ready();
+        }
+        setState(State.DONE);
+        if (table.activePlayers().size() == 1) {
+            return muckResults();
+        } else {
+            return table.getShowdownWinners();
+        }
     }
 
-    public synchronized void unblock(){
-        this.notifyAll();
-    }
-
-    @Async
-    public synchronized Future<Map<Player, Integer>> startRound() throws ExecutionException, InterruptedException {
+    public synchronized void initialize() throws InterruptedException {
+        setState(State.STARTING);
         table = new TableImpl(this.table.getPlayers(), dealerSeed);
         dealerSeed++;
-        turn = null;
-        newTurn = null;
+        turns = new LinkedList<>();
         turnNotification = null;
-        System.out.println("-------Started Game-------");
-        for (Player p : getTable().getPlayers()) {
+        for (Player p : table.getPlayers()) {
             if (p.getChips() < 2) {
                 p.setInRound(false);
             }
         }
+        table.setRound(TableImpl.ROUND.INTERIM);
+        //Wait for 2 players to join
         while (!table.hasTwoNext()) {
-            for (Player p : getTable().getPlayers()) {
+            for (Player p : table.getPlayers()) {
                 if (p.getChips() < 2) {
                     p.setInRound(false);
                 }
             }
             this.wait();
         }
-
+        table.setRound(TableImpl.ROUND.BLINDS);
         //Post Blinds
         table.drawHoleCards();
         table.next().setDealer(true);
-        Player small_blind = getBlind(new SmallBlindNotification(null));
+        initialPlayer = getBlind(new SmallBlindNotification(null));
         getBlind(new BigBlindNotification(null));
-
-
-        while (table.getRound().getRoundNum() < TableImpl.ROUND.INTERIM.getRoundNum()) {
-            Player roundWinner = mainTurnLoop(table.getRound() == TableImpl.ROUND.BLINDS ? small_blind : null);
-            if (roundWinner != null) {
-                for (Player player : table.getPlayers()) {
-                    if (player.isInRound()) table.setWinnerInfo(player.getName() + " mucks");
-                }
-                Map<Player, Integer> result = new HashMap<>();
-                result.put(roundWinner, table.getPotSize());
-                return new AsyncResult<>(result);
-            }
-            table.nextRound();
-            if (table.getRound() == TableImpl.ROUND.INTERIM) {
-                return new AsyncResult<>(table.getShowdownWinners());
-            }
+        if(table.activePlayers().size() == 2){
+            Player n;
+            turnNotification = new LockedTurnNotification(n = table.next(), table.getCurrentBet() - n.getBet());
+        } else {
+            turnNotification = new BigBlindNotification(table.next());
         }
-
-        throw new IllegalStateException("round ended with no winner");
     }
 
-    private synchronized Player mainTurnLoop(Player initial_player) throws InterruptedException {
-        int turnsPlayed = 0;
-        Player initialPlayer = initial_player;
-        if (getTable().getRound() == TableImpl.ROUND.BLINDS){
-            turnsPlayed = 2;
+    private synchronized void ready() throws InterruptedException {
+        setState(State.READY);
+        while(turns.isEmpty()){
+            wait();
         }
-        while (table.hasNext()) {
-            Player next = table.next();
-            if (turnsPlayed == 0) {
-                initialPlayer = next;
-            }
-            if (table.activePlayers().size() < 2) {
-                return table.next();
-            }
-            if (table.getCurrentBet() > 0 && next.getBet() == table.getCurrentBet()) {
-                turn = new Turn(next, CHECK, 0);
-                turnsPlayed++;
+        TurnNotification result = processTurn(turns.poll());
+        setState(State.READY);
+        setTurnNotification(result);
+    }
+
+    private synchronized TurnNotification processTurn(Turn turn){
+        System.out.println(turn);
+        setState(State.PROCESSING);
+        if (table.getCurrentBet() > 0) {
+            if (turn.getAction() == Turn.PlayerAction.CALL || turn.getAction() == Turn.PlayerAction.RAISE) {
+                turn.getPlayer().bet(turn.getBetAmount());
+                table.addToPot(turn.getBetAmount(), turn.getPlayer());
+                table.setCurrentBet(Math.max(turn.getBetAmount(), table.getCurrentBet()));
+            } else if (turn.getAction() == ALLIN) {
+                int s = turn.getPlayer().getChips();
+                turn.getPlayer().bet(s);
+                Pot sidePot = table.getPots().get(table.getPots().size() - 1).split(turn.getPlayer(), s);
+                table.addPot(sidePot);
             } else {
-                if (table.getCurrentBet() > 0) {
-                    if (next.getBet() > 0) {
-                        sendTurnNotification(new StakedTurnNotification(next, table.getCurrentBet() - next.getBet()));
-                    } else {
-                        sendTurnNotification(new StakedTurnNotification(next, table.getCurrentBet()));
-                    }
-                } else {
-                    sendTurnNotification(new OpenTurnNotification(next));
-                }
-                while (newTurn == null) {
-                    this.wait();
-                    if (table.activePlayers().size() < 2) {
-                        return table.next();
-                    }
-                }
-                turnNotification = null;
-                turn = newTurn;
-                newTurn = null;
-                turnsPlayed++;
-                if (table.getCurrentBet() > 0) {
-                    if (turn.getAction() == Turn.PlayerAction.CALL || turn.getAction() == Turn.PlayerAction.RAISE) {
-                        turn.getPlayer().bet(turn.getBetAmount());
-                        table.addToPot(turn.getBetAmount(), turn.getPlayer());
-                        table.setCurrentBet(turn.getBetAmount());
-                    } else if (turn.getAction() == ALLIN) {
-                        int s = turn.getPlayer().getChips();
-                        turn.getPlayer().bet(s);
-                        Pot sidePot = table.getPots().get(table.getPots().size() - 1).split(turn.getPlayer(), s);
-                        table.addPot(sidePot);
-
-                    } else {
-                        turn.getPlayer().setInRound(false);
-                    }
-                } else {
-                    if (turn.getAction() == Turn.PlayerAction.BET) {
-                        turn.getPlayer().bet(turn.getBetAmount());
-                        table.addToPot(turn.getBetAmount(), turn.getPlayer());
-                        table.setCurrentBet(turn.getBetAmount());
-                    } else if (turn.getAction() == FOLD) {
-                        turn.getPlayer().setInRound(false);
-                        if (table.activePlayers().size() < 2) {
-                            return table.next();
-                        }
-                    }
-                }
+                turnsPlayed--;
+                turn.getPlayer().setInRound(false);
             }
-            if ((next == initialPlayer && turnsPlayed > 1) || turnsPlayed >= table.activePlayers().size()) {
-                boolean allInPlayersMatchedBet = true;
-                for (Player p : table.activePlayers()) {
-                    if (p.getBet() < table.getCurrentBet() && p.getChips() != 0) allInPlayersMatchedBet = false;
-                }
-                if (allInPlayersMatchedBet) return null;
+        } else {
+            if (turn.getAction() == Turn.PlayerAction.BET) {
+                turn.getPlayer().bet(turn.getBetAmount());
+                table.addToPot(turn.getBetAmount(), turn.getPlayer());
+                table.setCurrentBet(turn.getBetAmount());
+            } else if (turn.getAction() == FOLD) {
+                turnsPlayed--;
+                turn.getPlayer().setInRound(false);
             }
         }
-        throw new IllegalStateException("Turn loop ended without getting back to dealer or finding a winner");
+        turnsPlayed++;
+        if(table.activePlayers().size() < 2){
+            return null;
+        }
+        Player next = table.next();
+        if ((next == initialPlayer && turnsPlayed > 1) || turnsPlayed >= table.activePlayers().size()) {
+            boolean allInPlayersMatchedBet = true;
+            for (Player p : table.activePlayers()) {
+                if (p.getBet() < table.getCurrentBet() && p.getChips() != 0) allInPlayersMatchedBet = false;
+            }
+            if(allInPlayersMatchedBet){
+                table.nextRound();
+                turnsPlayed = 0;
+            }
+        }
+        if (table.getCurrentBet() > 0) {
+            if (next.getBet() > 0) {
+                return new StakedTurnNotification(next, table.getCurrentBet() - next.getBet());
+            } else {
+                return new StakedTurnNotification(next, table.getCurrentBet());
+            }
+        } else {
+            return new OpenTurnNotification(next);
+        }
     }
 
-    private Player getBlind(TurnNotification blind) {
+    private synchronized Player getBlind(TurnNotification blind) {
         Player currentPlayer = table.next();
-        turn = new Turn(currentPlayer, BET, blind.getRequiredBet());
+        turnsPlayed++;
         currentPlayer.bet(blind.getRequiredBet());
-        table.addToPot(blind.getRequiredBet(), turn.getPlayer());
+        table.addToPot(blind.getRequiredBet(), currentPlayer);
         return currentPlayer;
     }
 
-    public void sendTurnNotification(TurnNotification turnNotification) {
+    public synchronized void setTurnNotification(TurnNotification turnNotification) {
+        waitForReady();
+        if(turnNotification == null){
+            this.turnNotification = null;
+            return;
+        }
         if (turnNotification.getPlayer().getChips() < turnNotification.getMinimumBet() ||
                 turnNotification.getPlayer().getChips() < turnNotification.getRequiredBet()) {
             turnNotification = new AllInTurnNotification(turnNotification.getPlayer());
@@ -168,25 +150,84 @@ public class TableController {
         this.turnNotification = turnNotification;
     }
 
-
-    public Table getTable() {
+    public synchronized Table getTable() {
+        while(state == State.PROCESSING) {
+            try {
+                wait();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
         return table;
     }
 
-    public synchronized void receiveTurn(Turn turn) {
-        newTurn = turn;
-        this.notifyAll();
-    }
-
-    TurnNotification getTurnNotification() {
+    public synchronized TurnNotification getTurnNotification() {
+        waitForReady();
         return turnNotification;
     }
 
-    public void removePlayer(Player player) {
-        if (turnNotification.getPlayer() == player) {
+    public synchronized void receiveTurn(Turn turn) {
+        if (state == State.DONE) {
+            return;
+        }
+        TurnNotification t = getTurnNotification();
+        setState(State.PROCESSING);
+        System.out.println(turnNotification);
+        if (turn.getBetAmount() > turn.getPlayer().getChips()) {
+            setState(State.READY);
+            throw new BetValueException(turn.getPlayer());
+        }
+        if(t.getPlayer() != turn.getPlayer()){
+            setState(State.READY);
+            throw new RuntimeException("Invalid turn");
+        }
+        turns.add(turn);
+        notifyAll();
+    }
+
+    public synchronized void addPlayer(Player player){
+        this.table.addPlayer(player);
+        notifyAll();
+    }
+
+    public synchronized void removePlayer(Player player) {
+        if (turnNotification != null && turnNotification.getPlayer() == player) {
             receiveTurn(new Turn(player, FOLD, 0));
         }
         table.removePlayer(player);
+    }
 
+    private void setState(State state){
+        this.state = state;
+        System.out.println(state);
+        setChanged();
+        notifyAll();
+        notifyObservers(state);
+    }
+
+    public synchronized State getState(){
+        waitForReady();
+        return state;
+    }
+
+    public Map<Player, Integer> muckResults(){
+        if (table.activePlayers().size() != 1) {
+            throw new IllegalStateException();
+        }
+        Player winner = table.activePlayers().toArray(new Player[0])[0];
+        table.setWinnerInfo(winner.getName() + " mucks");
+        Map<Player, Integer> result = new HashMap<>();
+        result.put(winner, table.getPotSize());
+        return result;
+    }
+
+    public synchronized void waitForReady(){
+        while(state == State.STARTING || state == State.PROCESSING) {
+            try {
+                this.wait();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
     }
 }

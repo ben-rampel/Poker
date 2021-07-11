@@ -19,29 +19,29 @@ public class Pot {
     public void add(Player player, int amount) {
         if (bets.containsKey(player)) {
             int total = bets.get(player) + amount;
-            if (total > bet) bet = total;
+            if (player.getBet() > bet) bet = player.getBet();
             bets.replace(player, total);
         } else {
             bets.put(player, amount);
-            if (amount > bet) bet = amount;
+            if (player.getBet() > bet) bet = player.getBet();
         }
     }
 
     public Pot split(Player player, int amount) {
         Pot sidePot = new Pot(bet - amount);
-        //.keySet().forEach(Player::clearHole);
+        this.add(player, amount);
         for (Player p : bets.keySet()) {
             if (p != player) {
                 sidePot.getBets().put(p, bet - amount);
+                this.bets.replace(p, bets.get(p) - (bet - amount));
             }
-            this.bets.replace(p, amount);
         }
         this.bet = amount;
         return sidePot;
     }
 
     public List<Player> getPlayers() {
-        return new LinkedList<Player>(bets.keySet());
+        return new LinkedList<>(bets.keySet());
     }
 
     public int getAmount() {
@@ -71,4 +71,14 @@ public class Pot {
     public void setBets(Map<Player, Integer> bets) {
         this.bets = bets;
     }
+
+    @Override
+    public String toString() {
+        return "Pot{" +
+                "isMain=" + isMain +
+                ", bet=" + bet +
+                ", bets=" + bets +
+                '}';
+    }
 }
+

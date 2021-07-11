@@ -3,18 +3,17 @@ package poker;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Component
 public class TableImpl implements Table {
     private ROUND round;
-    private Deck deck;
+    private final Deck deck;
     protected List<Card> commonCards;
-    private List<Player> players;
+    private final List<Player> players;
     private int currentPlayerIndex;
     private String winnerInfo;
-    private List<Pot> pots;
-    private int lastActivePlayerSize;
-
+    private final List<Pot> pots;
 
     public void setWinnerInfo(String winnerInfo) {
         this.winnerInfo = winnerInfo;
@@ -29,7 +28,6 @@ public class TableImpl implements Table {
         Pot main = new Pot(0);
         main.setMain(true);
         pots.add(main);
-        lastActivePlayerSize = 0;
         currentPlayerIndex = 0;
     }
 
@@ -40,7 +38,6 @@ public class TableImpl implements Table {
         pots.add(main);
         round = ROUND.BLINDS;
         deck = new Deck();
-        lastActivePlayerSize = 0;
         commonCards = new ArrayList<>();
         this.players = players;
         currentPlayerIndex = dealerSeed;
@@ -61,6 +58,9 @@ public class TableImpl implements Table {
 
     @Override
     public void addPlayer(Player player) {
+        if (round != ROUND.INTERIM) {
+            player.setInRound(false);
+        }
         players.add(player);
     }
 
@@ -84,7 +84,7 @@ public class TableImpl implements Table {
         Map<Player, Integer> results = new LinkedHashMap<>();
         for (int i = 0; i < pots.size(); i++) {
             TreeMap<Hand, Player> bestHandMap = new TreeMap<>();
-            for (Player p : pots.get(i).getPlayers()) {
+            for (Player p : pots.get(i).getPlayers().stream().filter(Player::isInRound).collect(Collectors.toSet())) {
                 bestHandMap.put(p.bestHand(commonCards.toArray(new Card[0])), p);
             }
             Player best = bestHandMap.lastEntry().getValue();
@@ -115,6 +115,9 @@ public class TableImpl implements Table {
         this.pots.add(pot);
     }
 
+    public void setRound(ROUND round) {
+        this.round = round;
+    }
 
     @Override
     public boolean hasNext() {
@@ -129,16 +132,13 @@ public class TableImpl implements Table {
     @Override
     public Player next() {
         if (hasNext()) {
-            currentPlayerIndex = (currentPlayerIndex + 1) % activePlayers().size();
-            if (lastActivePlayerSize > activePlayers().size()) {
-                currentPlayerIndex -= (lastActivePlayerSize - activePlayers().size());
+            int i = (currentPlayerIndex + 1) % players.size();
+            Player n = players.get(i);
+            while (!n.isInRound()) {
+                n = players.get((++i) % players.size());
             }
-            lastActivePlayerSize = activePlayers().size();
-            try {
-                return activePlayers().get(currentPlayerIndex);
-            } catch(IndexOutOfBoundsException e) {
-                return activePlayers().get(0);
-            }
+            currentPlayerIndex = i;
+            return n;
         } else {
             throw new IllegalStateException();
         }
@@ -154,16 +154,6 @@ public class TableImpl implements Table {
             p.setBet(0);
         }
         this.setCurrentBet(0);
-       /* if (this.round.getRoundNum() > ROUND.PREFLOP.getRoundNum() && activePlayers().size() > 2) {
-            for (int i = 0; i < activePlayers().size(); i++) {
-                if (activePlayers().get(adjustedIndex(i)).isDealer()) {
-                    activePlayers().get(adjustedIndex(i)).setDealer(false);
-                    activePlayers().get(adjustedIndex(i + 1)).setDealer(true);
-                    next();
-                    break;
-                }
-            }
-        }*/
 
         if (this.round.getRoundNum() < 5) {
             this.round = ROUND.getRound(this.round.getRoundNum() + 1);
@@ -224,7 +214,7 @@ public class TableImpl implements Table {
     public enum ROUND {
         BLINDS(0), PREFLOP(1), FLOP(2), TURN(3), RIVER(4), INTERIM(5);
 
-        private int roundNum;
+        private final int roundNum;
 
         ROUND(int i) {
             this.roundNum = i;

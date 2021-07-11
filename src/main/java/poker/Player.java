@@ -93,6 +93,17 @@ public class Player {
         return hands.get(hands.size() - 1);
     }
 
+    @Override
+    public String toString() {
+        return "Player{" +
+                "hole=" + Arrays.toString(hole) +
+                ", name='" + name + '\'' +
+                ", chips=" + chips +
+                ", bet=" + bet +
+                ", inRound=" + inRound +
+                '}';
+    }
+
     public void receiveWinnings(int amount) {
         chips += amount;
     }

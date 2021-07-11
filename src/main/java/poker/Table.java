@@ -21,6 +21,8 @@ public interface Table extends Iterator<Player> {
 
     void nextRound();
 
+    void setRound(TableImpl.ROUND round);
+
     void setCurrentBet(int amt);
 
     TableImpl.ROUND getRound();

@@ -44,7 +44,7 @@ public class UserRepository {
             if (a.getUsername().equals(u.getUsername())) throw new RuntimeException("Username in use");
         }
         Statement statement = DBConn.createStatement();
-        String insertQuery = "INSERT INTO `brampelpoker`.`users`\n(`USERNAME`,`PASSWORD`,`BALANCE`)\n" +
+        String insertQuery = "INSERT INTO `users`\n(`USERNAME`,`PASSWORD`,`BALANCE`)\n" +
                 "VALUES\n" +
                 String.format("('%s','%s',%d);", u.getUsername(), new String(u.getPassword()), u.getBalance());
         statement.executeUpdate(insertQuery);
@@ -75,15 +75,13 @@ public class UserRepository {
         return BCrypt.checkpw(password, new String(u.getPassword()));
     }
 
-    public boolean register(String username, String password) {
+    public void register(String username, String password) {
         User u = new User(username, password);
         u.setBalance(250);
         try {
             addUser(u);
-            return true;
         } catch (Exception e) {
             System.out.println(e.getMessage());
-            return false;
         }
     }
 

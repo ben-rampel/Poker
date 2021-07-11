@@ -6,9 +6,9 @@ import java.util.List;
  * Notifies a player that it is his turn, encapsulating the information needed to specify his possible turn options
  */
 public class TurnNotification {
-    private List<Turn.PlayerAction> options;
-    private int minimumBet;
-    private int requiredBet;
+    private final List<Turn.PlayerAction> options;
+    private final int minimumBet;
+    private final int requiredBet;
     private Player player;
 
     public TurnNotification(List<Turn.PlayerAction> options, int minimumBet, int requiredBet, Player player) {

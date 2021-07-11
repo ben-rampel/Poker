@@ -16,8 +16,8 @@ public class utils {
      * returns false if list does not contain such card
      */
 
-    public static int smallBlind = 1;
-    public static int bigBlind = 2;
+    public static final int smallBlind = 1;
+    public static final int bigBlind = 2;
 
     public static boolean containsCard(List<Card> cards, Card.Rank rank, Card.Suit suit) {
         Card testCard = new Card(rank, suit);
@@ -44,7 +44,11 @@ public class utils {
 
         boolean straight = true;
         for (int i = 0; i < clone.size() - 1; i++) {
-            if (clone.get(i).compareTo(clone.get(i + 1)) != -1) straight = false;
+            //noinspection ComparatorResultComparison
+            if (clone.get(i).compareTo(clone.get(i + 1)) != -1) {
+                straight = false;
+                break;
+            }
         }
 
         if (!straight && clone.get(4).getRank() == Card.Rank.ace) {

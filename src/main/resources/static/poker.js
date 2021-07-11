@@ -165,7 +165,7 @@ app.controller('controller', function ($scope, $stomp, $log, $http) {
                     //bad login
                     $('#usernameSelect').modal('show');
                     $('#loginWarning').show();
-                    return;
+
                 });
     };
 

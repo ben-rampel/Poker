@@ -5,6 +5,7 @@ import poker.Player;
 import poker.Pot;
 import poker.TurnNotification;
 
+import java.util.Arrays;
 import java.util.Map;
 
 public class GameData {
@@ -72,7 +73,6 @@ public class GameData {
         this.winnerInfo = winnerInfo;
     }
 
-
     public Player getWinner() {
         return winner;
     }
@@ -93,4 +93,18 @@ public class GameData {
 
     private TurnNotification turnNotification;
 
+    @Override
+    public String toString() {
+        return "GameData{" +
+                "pot=" + pot +
+                ", commonCards=" + Arrays.toString(commonCards) +
+                ", personalCards=" + Arrays.toString(personalCards) +
+                ", players=" + Arrays.toString(players) +
+                ", sidePots=" + Arrays.toString(sidePots) +
+                ", winner=" + winner +
+                ", winnerInfo='" + winnerInfo + '\'' +
+                ", folded=" + folded +
+                ", turnNotification=" + turnNotification +
+                '}';
+    }
 }

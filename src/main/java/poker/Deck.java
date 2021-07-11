@@ -32,7 +32,7 @@ public class Deck implements Iterator<Card> {
 
     /*
      * void shuffle()
-     * method to pseudorandomly move cards around to simulate shuffling the deck
+     * method to pseudo-randomly move cards around to simulate shuffling the deck
      */
     public void shuffle() {
         Random r = new Random();
