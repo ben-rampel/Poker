@@ -113,6 +113,17 @@ public class LobbyImpl implements Lobby, Observer {
     }
 
     @Override
+    public void awaitWinner() {
+        try {
+            winners.get();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
     public Player getPlayerFromName(String name) {
         return tableController.getTable().getPlayerFromName(name);
     }

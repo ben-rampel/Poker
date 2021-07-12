@@ -11,6 +11,7 @@ public interface Lobby {
     void removePlayer(Player player);
     List<Player> getPlayers();
     void receiveTurn(Turn turn);
+    void awaitWinner();
     GameData getState(Player player);
     GameData getState();
     Player getPlayerFromName(String name);
