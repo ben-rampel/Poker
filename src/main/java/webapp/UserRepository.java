@@ -77,7 +77,7 @@ public class UserRepository {
 
     public void register(String username, String password) {
         User u = new User(username, password);
-        u.setBalance(250);
+        u.setBalance(3500);
         try {
             addUser(u);
         } catch (Exception e) {
