@@ -12,6 +12,8 @@ public interface Lobby {
     List<Player> getPlayers();
     void receiveTurn(Turn turn);
     void awaitWinner();
+    void awaitReady();
+    TableController.State getControllerState();
     GameData getState(Player player);
     GameData getState();
     Player getPlayerFromName(String name);

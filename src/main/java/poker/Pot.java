@@ -27,7 +27,25 @@ public class Pot {
         }
     }
 
-    public Pot split(Player player, int amount) {
+    public Pot split(Player player, int amount){
+        Pot sidePot = new Pot(0);
+        //bets.replace(player, bets.get(player) + amount);
+        int totalWinnableForPlayer = this.bets.get(player);
+        for (Player p : bets.keySet()){
+            if(p != player){
+                if(p.getBet() > amount){
+                    sidePot.add(p, bets.get(p) - totalWinnableForPlayer);
+                    bets.replace(p, totalWinnableForPlayer);
+                } else {
+                    sidePot.add(p, bets.get(p));
+                    bets.replace(p, 0);
+                }
+            }
+        }
+        return sidePot;
+    }
+
+/*    public Pot split(Player player, int amount) {
         Pot sidePot = new Pot(bet - amount);
         this.add(player, amount);
         for (Player p : bets.keySet()) {
@@ -36,9 +54,8 @@ public class Pot {
                 this.bets.replace(p, bets.get(p) - (bet - amount));
             }
         }
-        this.bet = amount;
         return sidePot;
-    }
+    }*/
 
     public List<Player> getPlayers() {
         return new LinkedList<>(bets.keySet());

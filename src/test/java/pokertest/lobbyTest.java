@@ -218,6 +218,7 @@ public class lobbyTest {
         }
         System.out.println(totalChips);
         assertEquals(1200, totalChips);
+        System.out.println("Sneed");
         tableController.receiveTurn(new Turn(p = tableController.getTurnNotification().getPlayer(), Turn.PlayerAction.CHECK, 0));
         tableController.receiveTurn(new Turn(p = tableController.getTurnNotification().getPlayer(), Turn.PlayerAction.CHECK, 0));
     }

@@ -71,12 +71,12 @@ public class TableImpl implements Table {
 
     @Override
     public int getCurrentBet() {
-        return this.pots.get(0).getBet();
+        return this.pots.get(pots.size()-1).getBet();
     }
 
     @Override
     public void setCurrentBet(int amt) {
-        this.pots.get(0).setBet(amt);
+        this.pots.get(pots.size()-1).setBet(amt);
     }
 
     @Override
@@ -102,7 +102,27 @@ public class TableImpl implements Table {
 
     @Override
     public void addToPot(int i, Player p) {
-        pots.get(0).add(p, i);
+        int j = 0;
+        if (pots.get(0).getBets().isEmpty() || !pots.get(0).getBets().containsKey(p)) {
+            pots.get(0).add(p,i);
+            return;
+        }
+        while(i > 0 && j < pots.size()) {
+            Pot pot = pots.get(j);
+            int max = pot.getBets().values().stream().max(Integer::compareTo).get();
+            if(pot.getBets().get(p) < max){
+                int diff = max - pot.getBets().get(p);
+                if(i >= diff) {
+                    pot.getBets().replace(p, pot.getBets().get(p) + diff);
+                    i -= diff;
+                } else {
+                    pot.getBets().replace(p, pot.getBets().get(p) + i);
+                    i = 0;
+                }
+            }
+            j++;
+        }
+        pots.get(pots.size()-1).add(p, i);
     }
 
     @Override
@@ -181,8 +201,12 @@ public class TableImpl implements Table {
         }
     }
 
-    public int getPotSize() {
+    public int getMainPotSize() {
         return pots.get(0).getAmount();
+    }
+
+    public int getTotalPotAmount(){
+        return pots.stream().map(Pot::getAmount).reduce(Integer::sum).orElse(0);
     }
 
     public List<Card> getCommonCards() {

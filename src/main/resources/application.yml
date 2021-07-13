@@ -1,0 +1,25 @@
+spring:
+  application:
+    name: brampel-poker
+server:
+  port: 9090
+
+---
+spring:
+  profiles: dev
+  application:
+    name: brampel-poker
+server:
+  port: 9090
+---
+spring:
+  profiles: prod
+  application:
+    name: brampel-poker
+server:
+  port: 443
+  ssl:
+    enabled: true
+    key-alias: tomcat
+    key-store: "/root/yourkeystore.jks"
+    key-store-type: jks

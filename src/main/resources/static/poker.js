@@ -1,5 +1,4 @@
 'use strict';
-const hostname = window.location.host;
 let app = angular.module('poker', ['ngStomp']);
 app.controller('controller', function ($scope, $stomp, $log, $http) {
     let $ctrl = this;
@@ -130,13 +129,13 @@ app.controller('controller', function ($scope, $stomp, $log, $http) {
     $scope.connectFunc = function () {
 
         console.log($scope.player);
-        $http.post('http://' + hostname + '/login', [$scope.player, $scope.password])
+        $http.post(window.location + 'login', [$scope.player, $scope.password])
             .then(
                 function (data) {
                     //successful login
                     console.log(data);
                     $stomp
-                        .connect('http://' + hostname + '/socket')
+                        .connect(window.location + 'socket')
                         // frame = CONNECTED headers
                         .then(function (frame) {
                             var url = '/poker/' + $scope.player;

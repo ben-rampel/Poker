@@ -20,6 +20,7 @@ public class Player {
     private int bet;
     private boolean inRound;
     private boolean isDealer;
+    private boolean allIn = false;
     private String websocketsSession;
 
     public Player(String name, int startingChips) {
@@ -30,6 +31,9 @@ public class Player {
     }
 
     public void bet(int amt) {
+        if(amt == chips){
+            setAllIn(true);
+        }
         if (amt <= chips) {
             chips -= amt;
             bet += amt;
@@ -118,5 +122,13 @@ public class Player {
 
     public void setWebsocketsSession(String websocketsSession) {
         this.websocketsSession = websocketsSession;
+    }
+
+    public boolean isAllIn() {
+        return allIn;
+    }
+
+    public void setAllIn(boolean allIn) {
+        this.allIn = allIn;
     }
 }

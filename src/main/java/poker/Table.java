@@ -39,7 +39,9 @@ public interface Table extends Iterator<Player> {
 
     List<Player> getPlayers();
 
-    int getPotSize();
+    int getMainPotSize();
+
+    int getTotalPotAmount();
 
     List<Card> getCommonCards();
 

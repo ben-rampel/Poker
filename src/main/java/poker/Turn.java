@@ -31,13 +31,13 @@ public class Turn {
 
     @Override
     public String toString() {
-        String actionString = player.getName() + " " + action.toString().toLowerCase();
+        String actionString = player.getName() + " (" + player.isAllIn() + ") " + action.toString().toLowerCase();
         if (action == PlayerAction.RAISE) {
             actionString += "d";
         } else {
             actionString += "ed";
         }
-        if (action == PlayerAction.RAISE || action == PlayerAction.CALL)
+        if (action == PlayerAction.RAISE || action == PlayerAction.CALL || action == PlayerAction.BET)
             actionString = actionString.concat(" " + getBetAmount());
         actionString += ".";
         return actionString;

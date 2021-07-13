@@ -10,10 +10,17 @@ public class LobbyImpl implements Lobby, Observer {
     private final TableController tableController;
     private CompletableFuture<Map<Player, Integer>> winners;
     private TableController.State controllerState = null;
+    private int lobbyTimeout = 4000;
 
     public LobbyImpl(){
         tableController = new TableController();
         tableController.addObserver(this);
+    }
+
+    public LobbyImpl(int lobbyTimeout){
+        tableController = new TableController();
+        tableController.addObserver(this);
+        this.lobbyTimeout = lobbyTimeout;
     }
 
     @Override
@@ -34,7 +41,7 @@ public class LobbyImpl implements Lobby, Observer {
                         winner.getKey().receiveWinnings(winner.getValue());
                     }
                     System.out.println("Game finished.");
-                    Thread.sleep(4000);
+                    Thread.sleep(lobbyTimeout);
                 } catch (Exception ignored) {
                 }
             }
@@ -78,7 +85,7 @@ public class LobbyImpl implements Lobby, Observer {
         Map<String, Boolean> foldedMap = new HashMap<>();
         GameData currentGameData = new GameData();
 
-        currentGameData.setPot(table.getPotSize());
+        currentGameData.setPot(table.getMainPotSize());
         currentGameData.setCommonCards(table.getCommonCards().toArray(new Card[0]));
         if (p == null){
             currentGameData.setPersonalCards(new Card[0]);
@@ -122,6 +129,11 @@ public class LobbyImpl implements Lobby, Observer {
     }
 
     @Override
+    public void awaitReady() {
+        tableController.getTurnNotification();
+    }
+
+    @Override
     public Player getPlayerFromName(String name) {
         return tableController.getTable().getPlayerFromName(name);
     }
@@ -136,9 +148,13 @@ public class LobbyImpl implements Lobby, Observer {
         if(arg instanceof TableController.State){
             this.controllerState = (TableController.State) arg;
             if(this.controllerState == TableController.State.READY) {
-                System.out.println(getState());
+                //System.out.println(getState());
             }
         }
     }
 
+    @Override
+    public TableController.State getControllerState() {
+        return controllerState;
+    }
 }
