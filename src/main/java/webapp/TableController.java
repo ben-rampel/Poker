@@ -9,7 +9,7 @@ import static poker.Turn.PlayerAction.*;
 
 public class TableController extends Observable {
     private Table table = new TableImpl();
-    private Queue<Turn> turns = new LinkedList<>();
+    private final Queue<Turn> turns = new LinkedList<>();
     private Player initialPlayer = null;
     private int turnsPlayed = 0;
     protected TurnNotification turnNotification;
@@ -17,7 +17,7 @@ public class TableController extends Observable {
     public enum State {STARTING, READY, PROCESSING, DONE}
     private State state = State.STARTING;
 
-    public synchronized Map<Player, Integer> startRound() throws ExecutionException, InterruptedException{
+    public synchronized Map<Player, Integer> startRound() {
         initialize();
         while(table.getRound().compareTo(TableImpl.ROUND.INTERIM) < 0 && table.activePlayers().size() >= 2){
             ready();
@@ -30,7 +30,7 @@ public class TableController extends Observable {
         }
     }
 
-    public synchronized void initialize() throws InterruptedException {
+    public synchronized void initialize() {
         setState(State.STARTING);
         table = new TableImpl(this.table.getPlayers(), dealerSeed++);
         turns.clear();
@@ -45,7 +45,9 @@ public class TableController extends Observable {
                     p.setInRound(false);
                 }
             }
-            this.wait();
+            try {
+                wait();
+            } catch (InterruptedException ignored) {}
         }
         table.setRound(TableImpl.ROUND.BLINDS);
         //Post Blinds
@@ -61,10 +63,12 @@ public class TableController extends Observable {
         }
     }
 
-    private synchronized void ready() throws InterruptedException {
+    private synchronized void ready() {
         setState(State.READY);
         while(turns.isEmpty()){
-            wait();
+            try {
+                wait();
+            } catch (InterruptedException ignored) {}
         }
         TurnNotification result = processTurn(turns.poll());
         setState(State.READY);
@@ -72,12 +76,15 @@ public class TableController extends Observable {
     }
 
     private synchronized TurnNotification processTurn(Turn turn){
+        setState(State.PROCESSING);
         if(turn.getBetAmount() == turn.getPlayer().getChips() && turn.getBetAmount() > 0) {
             turn.getPlayer().setAllIn(true);
-            turn = new Turn(turn.getPlayer(), ALLIN, turn.getBetAmount());
+            if(table.getCurrentBet() > turn.getBetAmount()) {
+                turn = new Turn(turn.getPlayer(), ALLIN, turn.getBetAmount());
+            }
         }
         System.out.println(turn);
-        setState(State.PROCESSING);
+
         if (table.getCurrentBet() > 0) {
             if (turn.getAction() == Turn.PlayerAction.CALL || turn.getAction() == Turn.PlayerAction.RAISE) {
                 turn.getPlayer().bet(turn.getBetAmount());
@@ -150,7 +157,7 @@ public class TableController extends Observable {
             return;
         }
         Player p = turnNotification.getPlayer();
-        if (!p.isAllIn() && p.getChips() < turnNotification.getMinimumBet() || p.getChips() < turnNotification.getRequiredBet()) {
+        if (!p.isAllIn() && (p.getChips() < turnNotification.getMinimumBet() || p.getChips() < turnNotification.getRequiredBet())) {
             this.turnNotification = new AllInTurnNotification(p);
         } else if (p.isAllIn()){
             this.turnNotification = new OpenTurnNotification(p);
@@ -158,6 +165,8 @@ public class TableController extends Observable {
         } else {
             this.turnNotification = turnNotification;
         }
+        //setChanged();
+        //notifyObservers();
     }
 
     public synchronized Table getTable() {

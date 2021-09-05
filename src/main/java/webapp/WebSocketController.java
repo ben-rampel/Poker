@@ -2,6 +2,7 @@ package webapp;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.EventListener;
@@ -17,28 +18,25 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 import org.springframework.web.socket.messaging.SessionSubscribeEvent;
 import poker.Player;
 import poker.Turn;
 
 import javax.annotation.PostConstruct;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.NoSuchElementException;
+import javax.naming.InvalidNameException;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @SuppressWarnings("SameReturnValue")
 @EnableScheduling
 @EnableAsync
 @Controller
 
-public class WebSocketController {
+public class WebSocketController implements Observer {
     private final SimpMessageSendingOperations messagingTemplate;
-    private final List<Lobby> lobbies;
+    private final List<LobbyImpl> lobbies;
     private final UserRepository userRepository;
 
     @Autowired
@@ -46,6 +44,7 @@ public class WebSocketController {
         this.messagingTemplate = messagingTemplate;
         this.lobbies = new LinkedList<>();
         this.lobbies.add(new LobbyImpl());
+        this.lobbies.get(0).addObserver(this);
         this.userRepository = userRepository;
     }
 
@@ -55,38 +54,41 @@ public class WebSocketController {
     }
 
     @MessageMapping("/sendTurn")
-    public void processTurnFromClient(@Payload String turn) throws Exception {
-        JSONObject messageAsJSON = new JSONObject(turn);
-
-        String action = (String) messageAsJSON.getJSONObject("message").get("action");
-        int amount = (int) messageAsJSON.getJSONObject("message").get("betAmount");
-        String player = (String) messageAsJSON.getJSONObject("message").get("player");
-
+    public void processTurnFromClient(@Payload String turn) {
+        String player = null;
         try {
+            JSONObject messageAsJSON = new JSONObject(turn);
+            player = (String) messageAsJSON.getJSONObject("message").get("player");
+            Turn.PlayerAction action = Turn.PlayerAction.valueOf(((String) messageAsJSON.getJSONObject("message").get("action")).toUpperCase(Locale.ROOT));
+            int amount = (int) messageAsJSON.getJSONObject("message").get("betAmount");
+
             lobbies.get(0).receiveTurn(new Turn(
                     lobbies.get(0).getPlayerFromName(player),
-                    Turn.PlayerAction.valueOf(action.toUpperCase()),
+                    action,
                     amount));
-        } catch (RuntimeException e){
-            messagingTemplate.convertAndSend("/poker/" + player + "/error", "\"" + e.getMessage() + "\"");
+        } catch (JSONException ignored) {}
+        catch (IllegalArgumentException e){
+            if (player != null) messagingTemplate.convertAndSend("/poker/" + player + "/error", "\"" + e.getMessage() + "\"");
         }
+        this.refreshAllPlayers();
     }
 
-    private void sendGameData(Player p) throws JsonProcessingException {
-        ObjectMapper mapper = new ObjectMapper();
+    private void sendGameData(Player p) {
+        while(lobbies.get(0).getControllerState() == TableController.State.PROCESSING) {
+            lobbies.get(0).awaitReady();
+        }
         GameData state = lobbies.get(0).getState(p);
-        messagingTemplate.convertAndSend("/poker/" + p.getName(), mapper.writeValueAsString(state));
+        try {
+            String serializedState = (new ObjectMapper()).writeValueAsString(state);
+            messagingTemplate.convertAndSend("/poker/" + p.getName(), serializedState);
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
     }
 
-    @Scheduled(fixedRate = 400)
+    @Scheduled(fixedRate = 8000)
     public void refreshAllPlayers() {
-        for (Player p : lobbies.get(0).getPlayers()) {
-            try {
-                sendGameData(p);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
+        lobbies.get(0).getPlayerSet().forEach(this::sendGameData);
     }
 
     @MessageExceptionHandler
@@ -101,8 +103,9 @@ public class WebSocketController {
         System.out.println("login");
         String username = credentials[0];
         String password = credentials[1];
-        for (Player p : lobbies.get(0).getPlayers()) {
-            if (p.getName().equals(username)) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        if(lobbies.get(0).getPlayerSet().stream().map(Player::getName).collect(Collectors.toSet()).contains(username))
+        {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
         if (userRepository.login(username, password)) {
             if (userRepository.getBalance(username) >= 250) {
@@ -124,9 +127,13 @@ public class WebSocketController {
 
     @PostMapping("/signUp")
     public String signUpSubmit(@ModelAttribute SignUpForm data, Model model) {
-        userRepository.register(data.getName(), data.getPassword());
-        System.out.println("registered");
         model.addAttribute("signupform", new SignUpForm());
+        try {
+            userRepository.register(data.getName(), data.getPassword());
+            System.out.println("registered");
+        } catch(InvalidNameException e){
+            model.addAttribute("error", "Error: " + e.getMessage());
+        }
         return "signUp";
     }
 
@@ -139,6 +146,7 @@ public class WebSocketController {
             userRepository.deposit(toBeRemoved.getName(), toBeRemoved.getChips());
             lobbies.get(0).removePlayer(toBeRemoved);
         } catch (NoSuchElementException ignored) {}
+        this.refreshAllPlayers();
     }
 
     @EventListener
@@ -149,5 +157,11 @@ public class WebSocketController {
             String user = (((String) headers.get("simpDestination")).split("/")[2]);
             lobbies.get(0).getPlayerFromName(user).setWebsocketsSession(sessionID);
         }
+        this.refreshAllPlayers();
+    }
+
+    @Override
+    public void update(Observable o, Object arg) {
+        this.refreshAllPlayers();
     }
 }

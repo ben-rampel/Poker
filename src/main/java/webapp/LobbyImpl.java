@@ -6,9 +6,9 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
-public class LobbyImpl implements Lobby, Observer {
+public class LobbyImpl extends Observable implements Lobby, Observer {
     private final TableController tableController;
-    private CompletableFuture<Map<Player, Integer>> winners;
+    private CompletableFuture<Map<Player, Integer>> winnersFuture;
     private TableController.State controllerState = null;
     private int lobbyTimeout = 4000;
 
@@ -25,29 +25,22 @@ public class LobbyImpl implements Lobby, Observer {
 
     @Override
     public void start() {
-        Thread gameThread = new Thread(() -> {
-            while(true) {
-                winners = CompletableFuture.supplyAsync(() -> {
-                    try {
-                        return tableController.startRound();
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                    return null;
-                });
-                try {
-                    Map<Player, Integer> winners_ = winners.get();
-                    for (Map.Entry<Player, Integer> winner : winners_.entrySet()) {
-                        winner.getKey().receiveWinnings(winner.getValue());
-                    }
-                    System.out.println("Game finished.");
-                    Thread.sleep(lobbyTimeout);
-                } catch (Exception ignored) {
-                }
-            }
-        });
-        gameThread.start();
+        (new Thread(this::_start)).start();
     }
+
+    private void _start() {
+        while(true) {
+            winnersFuture = CompletableFuture.supplyAsync(tableController::startRound).thenApply(x -> {
+                x.forEach(Player::receiveWinnings);
+                return x;
+            });
+            winnersFuture.join();
+            setChanged();
+            notifyObservers();
+            try { Thread.sleep(lobbyTimeout); } catch (Exception ignored ) {}
+        }
+    }
+
 
     @Override
     public void addPlayer(Player player) {
@@ -62,6 +55,11 @@ public class LobbyImpl implements Lobby, Observer {
     @Override
     public List<Player> getPlayers() {
         return tableController.getTable().getPlayers();
+    }
+
+    @Override
+    public Set<Player> getPlayerSet() {
+        return new HashSet<>(tableController.getTable().getPlayers());
     }
 
     @Override
@@ -104,9 +102,9 @@ public class LobbyImpl implements Lobby, Observer {
         currentGameData.setFolded(foldedMap);
 
         try {
-            if (winners.isDone()) {
-                if (winners != null) {
-                    currentGameData.setWinner(winners.get().keySet().toArray(new Player[0])[0]);
+            if (winnersFuture.isDone()) {
+                if (winnersFuture != null) {
+                    currentGameData.setWinner(winnersFuture.get().keySet().toArray(new Player[0])[0]);
                     currentGameData.setWinnerInfo(tableController.getTable().getWinnerInfo());
                 } else {
                     currentGameData.setWinner(null);
@@ -121,11 +119,7 @@ public class LobbyImpl implements Lobby, Observer {
 
     @Override
     public void awaitWinner() {
-        try {
-            winners.get();
-        } catch (InterruptedException | ExecutionException e) {
-            e.printStackTrace();
-        }
+        winnersFuture.join();
     }
 
     @Override
@@ -147,8 +141,9 @@ public class LobbyImpl implements Lobby, Observer {
     public void update(Observable o, Object arg) {
         if(arg instanceof TableController.State){
             this.controllerState = (TableController.State) arg;
-            if(this.controllerState == TableController.State.READY) {
-                //System.out.println(getState());
+            if(arg != TableController.State.PROCESSING) {
+                setChanged();
+                notifyObservers();
             }
         }
     }

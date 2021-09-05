@@ -4,11 +4,10 @@ import org.junit.Test;
 import poker.Card;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
-import static junit.framework.Assert.assertFalse;
 import static junit.framework.TestCase.assertTrue;
+import static org.junit.Assert.assertFalse;
 import static poker.utils.*;
 
 public class utilsTests {

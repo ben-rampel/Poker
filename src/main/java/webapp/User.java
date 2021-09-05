@@ -2,14 +2,17 @@ package webapp;
 
 import org.mindrot.jbcrypt.BCrypt;
 
+import javax.naming.InvalidNameException;
+import java.util.regex.Pattern;
+
 public class User {
     private String username;
     private byte[] password;
     private String avatar;
     private int balance;
 
-    public User(String username, String unhashedPassword) {
-        this.username = username;
+    public User(String username, String unhashedPassword) throws InvalidNameException {
+        setUsername(username);
         this.password = BCrypt.hashpw(unhashedPassword, BCrypt.gensalt()).getBytes();
     }
 
@@ -21,7 +24,10 @@ public class User {
         return username;
     }
 
-    public void setUsername(String username) {
+    public void setUsername(String username) throws InvalidNameException{
+        if(!Pattern.matches("^[\\dA-Za-z]+$", username)) {
+            throw new InvalidNameException("Username must be alphanumeric");
+        }
         this.username = username;
     }
 

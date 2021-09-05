@@ -26,6 +26,7 @@
     </div>
 </nav>
 <div class="container">
+    <h1 th:if="${error != null}" th:text="${error}"></h1>
     <form action="#" th:action="@{/signUp}" th:object="${signupform}" method="post">
         <div class="form-group">
             <label for="exampleInputEmail1">Username</label>
