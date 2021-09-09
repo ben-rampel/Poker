@@ -24,8 +24,8 @@ public class User {
         return username;
     }
 
-    public void setUsername(String username) throws InvalidNameException{
-        if(!Pattern.matches("^[\\dA-Za-z]+$", username)) {
+    public void setUsername(String username) throws InvalidNameException {
+        if (!Pattern.matches("^[\\dA-Za-z]+$", username)) {
             throw new InvalidNameException("Username must be alphanumeric");
         }
         this.username = username;

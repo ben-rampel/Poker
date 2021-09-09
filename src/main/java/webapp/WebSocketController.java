@@ -18,7 +18,10 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 import org.springframework.web.socket.messaging.SessionSubscribeEvent;
 import poker.Player;
@@ -66,15 +69,16 @@ public class WebSocketController implements Observer {
                     lobbies.get(0).getPlayerFromName(player),
                     action,
                     amount));
-        } catch (JSONException ignored) {}
-        catch (IllegalArgumentException e){
-            if (player != null) messagingTemplate.convertAndSend("/poker/" + player + "/error", "\"" + e.getMessage() + "\"");
+        } catch (JSONException ignored) {
+        } catch (IllegalArgumentException e) {
+            if (player != null)
+                messagingTemplate.convertAndSend("/poker/" + player + "/error", "\"" + e.getMessage() + "\"");
         }
         this.refreshAllPlayers();
     }
 
     private void sendGameData(Player p) {
-        while(lobbies.get(0).getControllerState() == TableController.State.PROCESSING) {
+        while (lobbies.get(0).getControllerState() == TableController.State.PROCESSING) {
             lobbies.get(0).awaitReady();
         }
         GameData state = lobbies.get(0).getState(p);
@@ -103,8 +107,7 @@ public class WebSocketController implements Observer {
         System.out.println("login");
         String username = credentials[0];
         String password = credentials[1];
-        if(lobbies.get(0).getPlayerSet().stream().map(Player::getName).collect(Collectors.toSet()).contains(username))
-        {
+        if (lobbies.get(0).getPlayerSet().stream().map(Player::getName).collect(Collectors.toSet()).contains(username)) {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
         if (userRepository.login(username, password)) {
@@ -121,17 +124,17 @@ public class WebSocketController implements Observer {
 
     @GetMapping("/signUp")
     public String signUp(Model model) {
-        model.addAttribute("signupform", new SignUpForm());
+        model.addAttribute("signUpForm", new SignUpForm());
         return "signUp";
     }
 
     @PostMapping("/signUp")
     public String signUpSubmit(@ModelAttribute SignUpForm data, Model model) {
-        model.addAttribute("signupform", new SignUpForm());
+        model.addAttribute("signUpForm", new SignUpForm());
         try {
             userRepository.register(data.getName(), data.getPassword());
             System.out.println("registered");
-        } catch(InvalidNameException e){
+        } catch (InvalidNameException e) {
             model.addAttribute("error", "Error: " + e.getMessage());
         }
         return "signUp";
@@ -145,7 +148,8 @@ public class WebSocketController implements Observer {
             Player toBeRemoved = lobbies.get(0).getPlayerFromSessionID(sessionID);
             userRepository.deposit(toBeRemoved.getName(), toBeRemoved.getChips());
             lobbies.get(0).removePlayer(toBeRemoved);
-        } catch (NoSuchElementException ignored) {}
+        } catch (NoSuchElementException ignored) {
+        }
         this.refreshAllPlayers();
     }
 

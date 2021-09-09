@@ -33,7 +33,9 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     }
 
     @Bean
-    public Table getTable() {return new TableImpl();}
+    public Table getTable() {
+        return new TableImpl();
+    }
 
     @Bean
     public String[] databaseParameters() {

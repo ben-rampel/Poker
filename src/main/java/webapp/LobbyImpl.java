@@ -12,12 +12,12 @@ public class LobbyImpl extends Observable implements Lobby, Observer {
     private TableController.State controllerState = null;
     private int lobbyTimeout = 4000;
 
-    public LobbyImpl(){
+    public LobbyImpl() {
         tableController = new TableController();
         tableController.addObserver(this);
     }
 
-    public LobbyImpl(int lobbyTimeout){
+    public LobbyImpl(int lobbyTimeout) {
         tableController = new TableController();
         tableController.addObserver(this);
         this.lobbyTimeout = lobbyTimeout;
@@ -29,7 +29,7 @@ public class LobbyImpl extends Observable implements Lobby, Observer {
     }
 
     private void _start() {
-        while(true) {
+        while (true) {
             winnersFuture = CompletableFuture.supplyAsync(tableController::startRound).thenApply(x -> {
                 x.forEach(Player::receiveWinnings);
                 return x;
@@ -37,7 +37,10 @@ public class LobbyImpl extends Observable implements Lobby, Observer {
             winnersFuture.join();
             setChanged();
             notifyObservers();
-            try { Thread.sleep(lobbyTimeout); } catch (Exception ignored ) {}
+            try {
+                Thread.sleep(lobbyTimeout);
+            } catch (Exception ignored) {
+            }
         }
     }
 
@@ -76,7 +79,7 @@ public class LobbyImpl extends Observable implements Lobby, Observer {
     public GameData getState(Player p) {
         Table table = tableController.getTable();
         TurnNotification turnNotification = null;
-        if(controllerState == TableController.State.READY) {
+        if (controllerState == TableController.State.READY) {
             turnNotification = tableController.getTurnNotification();
         }
 
@@ -85,7 +88,7 @@ public class LobbyImpl extends Observable implements Lobby, Observer {
 
         currentGameData.setPot(table.getMainPotSize());
         currentGameData.setCommonCards(table.getCommonCards().toArray(new Card[0]));
-        if (p == null){
+        if (p == null) {
             currentGameData.setPersonalCards(new Card[0]);
             currentGameData.setTurnNotification(turnNotification);
         } else {
@@ -139,9 +142,9 @@ public class LobbyImpl extends Observable implements Lobby, Observer {
 
     @Override
     public void update(Observable o, Object arg) {
-        if(arg instanceof TableController.State){
+        if (arg instanceof TableController.State) {
             this.controllerState = (TableController.State) arg;
-            if(arg != TableController.State.PROCESSING) {
+            if (arg != TableController.State.PROCESSING) {
                 setChanged();
                 notifyObservers();
             }

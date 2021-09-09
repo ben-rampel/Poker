@@ -1,7 +1,6 @@
 package webapp;
 
 import org.mindrot.jbcrypt.BCrypt;
-import org.omg.CORBA.DynAnyPackage.Invalid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -91,16 +90,14 @@ public class UserRepository {
         return BCrypt.checkpw(password, new String(u.getPassword()));
     }
 
-    public User register(String username, String password) throws InvalidNameException {
+    public void register(String username, String password) throws InvalidNameException {
         try {
             User u = new User(username, password);
             u.setBalance(3500);
             addUser(u);
-            return u;
         } catch (SQLException e) {
             System.out.println(e.getMessage());
         }
-        return null;
     }
 
     public int getBalance(String username) {

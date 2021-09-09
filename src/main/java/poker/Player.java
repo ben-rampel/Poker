@@ -31,7 +31,7 @@ public class Player {
     }
 
     public void bet(int amt) {
-        if(amt == chips){
+        if (amt == chips) {
             setAllIn(true);
         }
         if (amt <= chips) {

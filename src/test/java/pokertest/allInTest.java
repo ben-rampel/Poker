@@ -1,7 +1,6 @@
 package pokertest;
 
 import org.junit.Test;
-import poker.Card;
 import poker.Player;
 import webapp.Lobby;
 import webapp.LobbyImpl;

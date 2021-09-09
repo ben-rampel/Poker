@@ -71,12 +71,12 @@ public class TableImpl implements Table {
 
     @Override
     public int getCurrentBet() {
-        return this.pots.get(pots.size()-1).getBet();
+        return this.pots.get(pots.size() - 1).getBet();
     }
 
     @Override
     public void setCurrentBet(int amt) {
-        this.pots.get(pots.size()-1).setBet(amt);
+        this.pots.get(pots.size() - 1).setBet(amt);
     }
 
     @Override
@@ -104,15 +104,15 @@ public class TableImpl implements Table {
     public void addToPot(int i, Player p) {
         int j = 0;
         if (pots.get(0).getBets().isEmpty() || !pots.get(0).getBets().containsKey(p)) {
-            pots.get(0).add(p,i);
+            pots.get(0).add(p, i);
             return;
         }
-        while(i > 0 && j < pots.size()) {
+        while (i > 0 && j < pots.size()) {
             Pot pot = pots.get(j);
-            int max = pot.getBets().values().stream().max(Integer::compareTo).get();
-            if(pot.getBets().get(p) < max){
+            int max = pot.getBets().values().stream().max(Integer::compareTo).orElseThrow(IllegalStateException::new);
+            if (pot.getBets().get(p) < max) {
                 int diff = max - pot.getBets().get(p);
-                if(i >= diff) {
+                if (i >= diff) {
                     pot.getBets().replace(p, pot.getBets().get(p) + diff);
                     i -= diff;
                 } else {
@@ -122,7 +122,7 @@ public class TableImpl implements Table {
             }
             j++;
         }
-        pots.get(pots.size()-1).add(p, i);
+        pots.get(pots.size() - 1).add(p, i);
     }
 
     @Override
@@ -205,7 +205,7 @@ public class TableImpl implements Table {
         return pots.get(0).getAmount();
     }
 
-    public int getTotalPotAmount(){
+    public int getTotalPotAmount() {
         return pots.stream().map(Pot::getAmount).reduce(Integer::sum).orElse(0);
     }
 
