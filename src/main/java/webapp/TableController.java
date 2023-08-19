@@ -87,12 +87,8 @@ public class TableController extends Observable {
         if (turn.isFold()) {
             wasTurnPlayed = false;
             player.setInRound(false);
-        } else if (player.isAllIn()) {
-            Pot lastPot = table.getLastPot();
-            if (lastPot.hasPlayer(player)) {
-                table.addPot(lastPot.split(player, 0));
-            }
-        } else if (betAmount >= playerChips || turn.isAllIn()) {
+        } else if (!player.isAllIn() &&
+                (betAmount >= playerChips || turn.isAllIn())) {
             player.setAllIn(true);
             table.handleBet(player,playerChips);
             table.splitLastPot(player,playerChips);

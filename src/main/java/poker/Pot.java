@@ -29,20 +29,20 @@ public class Pot {
 
     public Pot split(Player player, int amount) {
         Pot sidePot = new Pot(0);
-        //bets.replace(player, bets.get(player) + amount);
         int totalWinnableForPlayer = this.bets.get(player);
         for (Player p : bets.keySet()) {
             if (p != player) {
-                if (p.getBet() > amount) {
+                if (bets.get(p) > totalWinnableForPlayer) {
                     sidePot.add(p, bets.get(p) - totalWinnableForPlayer);
                     bets.replace(p, totalWinnableForPlayer);
-                } else {
-                    sidePot.add(p, bets.get(p));
-                    bets.replace(p, 0);
                 }
             }
         }
-        return sidePot;
+        if(sidePot.bets.isEmpty()) {
+            return null;
+        } else {
+            return sidePot;
+        }
     }
 
     public List<Player> getPlayers() {

@@ -87,6 +87,9 @@ public class TableImpl implements Table {
             for (Player p : pots.get(i).getPlayers().stream().filter(Player::isInRound).collect(Collectors.toSet())) {
                 bestHandMap.put(p.bestHand(commonCards.toArray(new Card[0])), p);
             }
+            if(bestHandMap.isEmpty()) {
+                continue;
+            }
             Player best = bestHandMap.lastEntry().getValue();
             if (results.containsKey(best)) {
                 results.replace(best, results.get(best) + pots.get(i).getAmount());
@@ -118,8 +121,11 @@ public class TableImpl implements Table {
         }
         while (amount > 0 && j < pots.size()) {
             Pot pot = pots.get(j);
-            int max = pot.getBets().values().stream().max(Integer::compareTo).orElseThrow(IllegalStateException::new);
-            if (pot.getBets().get(p) < max) {
+            int max = pot.getBets().values().stream().max(Integer::compareTo).orElse(0);
+            if(max == 0){
+                pot.getBets().replace(p, amount);
+                amount = 0;
+            } else if (pot.getBets().get(p) < max) {
                 int diff = max - pot.getBets().get(p);
                 if (amount >= diff) {
                     pot.getBets().replace(p, pot.getBets().get(p) + diff);
@@ -146,7 +152,10 @@ public class TableImpl implements Table {
 
     @Override
     public void splitLastPot(Player player, int amount) {
-        addPot(getLastPot().split(player, amount));
+        Pot newPot = getLastPot().split(player, amount);
+        if (newPot != null) {
+            addPot(newPot);
+        }
     }
 
     @Override
