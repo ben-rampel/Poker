@@ -77,6 +77,10 @@ public class Pot {
         this.bets = bets;
     }
 
+    public boolean hasPlayer(Player player) {
+        return getBets().containsKey(player);
+    }
+
     @Override
     public String toString() {
         return "Pot{" +

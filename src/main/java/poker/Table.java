@@ -11,9 +11,15 @@ public interface Table extends Iterator<Player> {
 
     List<Pot> getPots();
 
+    Pot getLastPot();
+
+    void splitLastPot(Player player, int amount);
+
     void addPot(Pot pot);
 
-    void addToPot(int i, Player player);
+    void addToPot(Player player, int amount);
+
+    void handleBet(Player player, int amount);
 
     void addPlayer(Player player);
 

@@ -1,6 +1,8 @@
 package poker;
 
 
+import static poker.Turn.PlayerAction.*;
+
 /*
  * Encapsulation of a player's turn information sent from a player to the table
  */
@@ -41,5 +43,15 @@ public class Turn {
             actionString = actionString.concat(" " + getBetAmount());
         actionString += ".";
         return actionString;
+    }
+
+    public boolean isFold() {
+        return action == FOLD;
+    }
+    public boolean isAllIn() {
+        return action == ALLIN;
+    }
+    public boolean isCheck() {
+        return action == CHECK;
     }
 }

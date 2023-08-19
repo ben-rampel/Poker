@@ -30,7 +30,7 @@ public class Player {
         inRound = true;
     }
 
-    public void bet(int amt) {
+    public Player bet(int amt) {
         if (amt == chips) {
             setAllIn(true);
         }
@@ -40,6 +40,7 @@ public class Player {
         } else {
             throw new IllegalStateException("player bet more than he has");
         }
+        return this;
     }
 
     public boolean isDealer() {

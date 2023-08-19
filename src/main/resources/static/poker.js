@@ -1,10 +1,95 @@
 'use strict';
 let app = angular.module('poker', ['ngStomp']);
 app.controller('controller', function ($scope, $stomp, $log, $http) {
-    let $ctrl = this;
-    $ctrl.raiseBet = 0;
+    const $ctrl = this;
+    $ctrl.getCardUrl = getCardUrl;
 
-    $ctrl.getCardUrl = function (rank, suit) {
+    const refreshBet = function (tn) {
+        if (tn == undefined){
+            return;
+        }
+        console.log($ctrl.raiseBet + " " + $ctrl.bet);
+        if (tn.requiredBet > 0) {
+            $ctrl.bet = tn.requiredBet;
+        } else {
+            $ctrl.bet = tn.minimumBet;
+        }
+        if ($ctrl.raiseBet < $ctrl.bet || $ctrl.raiseBet == undefined) {
+            $ctrl.raiseBet = $ctrl.bet;
+        }
+    };
+
+    $scope.submitTurn = function (action) {
+        let bet = 0;
+        if (action === "CALL") {
+            bet=$ctrl.bet
+        } else if (action === "BET" || action === "RAISE") {
+            bet=Number($ctrl.raiseBet)
+        }
+        $stomp.send('/app/sendTurn', {
+            message: {
+                "action": action,
+                "betAmount": bet,
+                "player": $scope.player
+            }
+        });
+        $ctrl.raiseBet = undefined;
+    };
+
+    $scope.displayWinner = false;
+    $scope.connectFunc = function () {
+        $http.post(window.location + 'login', [$scope.player, $scope.password])
+            .then(
+                function (data) {
+                    //successful login
+                    $stomp
+                        .connect(window.location + 'socket')
+                        .then(function (frame) {
+                            var url = '/poker/' + $scope.player;
+                            var subscription = $stomp.subscribe(url, function (payload, headers, res) {
+                                $scope.currentGameData = payload;
+                                $scope.currentGameData.personalCards = $scope.currentGameData.personalCards.filter(x => x !== null);
+                                refreshBet($scope.currentGameData.turnNotification);
+                                if ($scope.currentGameData.winner != null && $scope.displayWinner === false) {
+                                    $scope.displayWinner = true;
+                                    //show winner
+                                    $('#winnerText').text($scope.currentGameData.winnerInfo);
+                                    $('#winnerModal').modal('show');
+                                } else {
+                                    $scope.displayWinner = false;
+                                }
+                                $scope.$apply();
+                            });
+                            var errorSubscription = $stomp.subscribe(url + "/error", function (payload, headers, res) {
+                                $('#errorText').text(payload);
+                                $('#errorModal').modal('show');
+                            });
+                        })
+                },
+                function (data) {
+                    //bad login
+                    $('#usernameSelect').modal('show');
+                    $('#loginWarning').show();
+                });
+    };
+    $stomp.setDebug(function (args) {
+        $log.debug(args)
+    });
+    $('#loginWarning').hide();
+    $('#usernameSelect').modal('show');
+});
+
+function loadCSS() {
+    let head = document.getElementsByTagName("HEAD")[0];
+    let cssURL = URL.createObjectURL(document.getElementById("css-file").files[0]);
+    let link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.type = "text/css";
+    link.href = cssURL;
+    head.appendChild(link);
+}
+
+function getCardUrl(rank, suit) {
         var rankMap = new Map();
         rankMap.set("two", 2);
         rankMap.set("three", 3);
@@ -28,156 +113,3 @@ app.controller('controller', function ($scope, $stomp, $log, $http) {
 
         return "resources/cards/" + rankMap.get(rank) + suitMap.get(suit) + ".png";
     };
-
-    $scope.player = "No one";
-    $scope.password = "";
-    $scope.currentGameData = {};
-
-    let refreshBet = function () {
-        if ($scope.currentGameData.turnNotification != null) {
-            if ($scope.currentGameData.turnNotification.requiredBet > 0) {
-                $ctrl.bet = $scope.currentGameData.turnNotification.requiredBet;
-            } else {
-                $ctrl.bet = $scope.currentGameData.turnNotification.minimumBet;
-            }
-        }
-        //$ctrl.raiseBet = $ctrl.bet;
-    };
-
-    refreshBet();
-    $scope.submitTurn = function (action, bet) {
-        if (action === "CHECK") {
-            //send check message
-            $stomp.send('/app/sendTurn', {
-                message: {
-                    "action": "CHECK",
-                    "betAmount": 0,
-                    "player": $scope.player
-                }
-            });
-            console.log("Player checked");
-        } else if (action === "CALL") {
-            //send call message
-            $stomp.send('/app/sendTurn', {
-                message: {
-                    "action": "CALL",
-                    "betAmount": $ctrl.bet,
-                    "player": $scope.player
-                }
-            });
-            console.log("Player called " + $ctrl.bet);
-        } else if (action === "ALLIN") {
-            //send allin message
-            $stomp.send('/app/sendTurn', {
-                message: {
-                    "action": "ALLIN",
-                    "betAmount": 0,
-                    "player": $scope.player
-                }
-            });
-            console.log("Player all inned");
-        } else if (action === "BET") {
-            $stomp.send('/app/sendTurn', {
-                message: {
-                    "action": "BET",
-                    "betAmount": Number($ctrl.raiseBet),
-                    "player": $scope.player
-                }
-            });
-            console.log("Player bet " + $ctrl.bet);
-        } else if (action === "RAISE") {
-            //validate bet amount against player's chips
-            let currentPlayer = $scope.currentGameData.players.find(obj => obj.name == $scope.player);
-
-            let raiseValue = $("#raiseValue").val();
-            console.log(currentPlayer.chips + " " + $scope.currentGameData.turnNotification.minimumBet + " " + raiseValue);
-
-            //if (raiseValue <= currentPlayer.chips) {
-            if (true) {
-                if ($scope.currentGameData.turnNotification.minimumBet === 0 || raiseValue > $scope.currentGameData.turnNotification.minimumBet) {
-                    //send raise message
-                    $stomp.send('/app/sendTurn', {
-                        message: {
-                            "action": "RAISE",
-                            "betAmount": Number($ctrl.raiseBet),
-                            "player": $scope.player
-                        }
-                    });
-                    console.log("Player raised " + $ctrl.raiseBet);
-                }
-            }
-
-        } else {
-            //send fold message
-            $stomp.send('/app/sendTurn', {
-                message: {
-                    "action": "FOLD",
-                    "betAmount": 0,
-                    "player": $scope.player
-                }
-            });
-            console.log("Player folded");
-        }
-    };
-
-
-    $stomp.setDebug(function (args) {
-        $log.debug(args)
-    });
-
-    $scope.displayWinner = false;
-    $scope.connectFunc = function () {
-
-        console.log($scope.player);
-        $http.post(window.location + 'login', [$scope.player, $scope.password])
-            .then(
-                function (data) {
-                    //successful login
-                    console.log(data);
-                    $stomp
-                        .connect(window.location + 'socket')
-                        // frame = CONNECTED headers
-                        .then(function (frame) {
-                            var url = '/poker/' + $scope.player;
-                            var subscription = $stomp.subscribe(url, function (payload, headers, res) {
-                                $scope.currentGameData = payload;
-                                $scope.currentGameData.personalCards = $scope.currentGameData.personalCards.filter(x => x !== null);
-                                refreshBet();
-                                if ($scope.currentGameData.winner != null && $scope.displayWinner === false) {
-                                    $scope.displayWinner = true;
-                                    //show winner
-                                    $('#winnerText').text($scope.currentGameData.winnerInfo);
-                                    $('#winnerModal').modal('show');
-                                } else {
-                                    $scope.displayWinner = false;
-                                }
-                                $scope.$apply();
-                                console.log(payload);
-                            });
-                            var errorSubscription = $stomp.subscribe(url + "/error", function (payload, headers, res) {
-                                $('#errorText').text(payload);
-                                $('#errorModal').modal('show');
-                            });
-                        })
-                },
-                function (data) {
-                    //bad login
-                    $('#usernameSelect').modal('show');
-                    $('#loginWarning').show();
-
-                });
-    };
-
-    $('#usernameSelect').modal('show');
-    $('#loginWarning').hide();
-});
-
-function loadCSS() {
-    let head = document.getElementsByTagName("HEAD")[0];
-    let cssURL = URL.createObjectURL(document.getElementById("css-file").files[0]);
-    let link = document.createElement("link");
-    link.rel = "stylesheet";
-    link.type = "text/css";
-    link.href = cssURL;
-    head.appendChild(link);
-}

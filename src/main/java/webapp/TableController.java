@@ -13,9 +13,7 @@ public class TableController extends Observable {
     private int turnsPlayed = 0;
     protected TurnNotification turnNotification;
     private int dealerSeed = 0;
-
     public enum State {STARTING, READY, PROCESSING, DONE}
-
     private State state = State.STARTING;
 
     public synchronized Map<Player, Integer> startRound() {
@@ -80,51 +78,37 @@ public class TableController extends Observable {
 
     private synchronized TurnNotification processTurn(Turn turn) {
         setState(State.PROCESSING);
-        if (turn.getBetAmount() == turn.getPlayer().getChips() && turn.getBetAmount() > 0) {
-            turn.getPlayer().setAllIn(true);
-            if (table.getCurrentBet() > turn.getBetAmount()) {
-                turn = new Turn(turn.getPlayer(), ALLIN, turn.getBetAmount());
-            }
-        }
-        System.out.println(turn);
+        boolean wasTurnPlayed = true;
+        Player player = turn.getPlayer();
+        int betAmount = turn.getBetAmount();
+        int playerChips = player.getChips();
 
-        if (table.getCurrentBet() > 0) {
-            if (turn.getAction() == Turn.PlayerAction.CALL || turn.getAction() == Turn.PlayerAction.RAISE) {
-                turn.getPlayer().bet(turn.getBetAmount());
-                table.addToPot(turn.getBetAmount(), turn.getPlayer());
-                table.setCurrentBet(Math.max(turn.getBetAmount(), table.getCurrentBet()));
-            } else if (turn.getAction() == ALLIN) {
-                int s = turn.getPlayer().getChips();
-                turn.getPlayer().bet(s);
-                table.addToPot(s, turn.getPlayer());
-                Pot sidePot = table.getPots().get(table.getPots().size() - 1).split(turn.getPlayer(), s);
-                table.addPot(sidePot);
-            } else if (turn.getPlayer().isAllIn()) {
-                Pot p = table.getPots().get(table.getPots().size() - 1);
-                if (p.getBets().containsKey(turn.getPlayer())) {
-                    Pot sidePot = p.split(turn.getPlayer(), 0);
-                    table.addPot(sidePot);
-                }
-            } else {
-                turnsPlayed--;
-                turn.getPlayer().setInRound(false);
+        //Process received turn
+        if (turn.isFold()) {
+            wasTurnPlayed = false;
+            player.setInRound(false);
+        } else if (player.isAllIn()) {
+            Pot lastPot = table.getLastPot();
+            if (lastPot.hasPlayer(player)) {
+                table.addPot(lastPot.split(player, 0));
             }
-        } else {
-            if (turn.getAction() == Turn.PlayerAction.BET) {
-                turn.getPlayer().bet(turn.getBetAmount());
-                table.addToPot(turn.getBetAmount(), turn.getPlayer());
-                table.setCurrentBet(turn.getBetAmount());
-            } else if (turn.getAction() == FOLD) {
-                turnsPlayed--;
-                turn.getPlayer().setInRound(false);
-            }
+        } else if (betAmount >= playerChips || turn.isAllIn()) {
+            player.setAllIn(true);
+            table.handleBet(player,playerChips);
+            table.splitLastPot(player,playerChips);
+        } else if (!turn.isCheck()){
+            table.handleBet(player,betAmount);
         }
-        turnsPlayed++;
+
+        // Figure out next turn
+        if(wasTurnPlayed) turnsPlayed++;
         if (table.activePlayers().size() < 2) {
             return null;
         }
         Player next = table.next();
-        if (turn.getAction() != RAISE && turn.getAction() != BET && ((next == initialPlayer && turnsPlayed > 1) || turnsPlayed >= table.activePlayers().size())) {
+        if (((next == initialPlayer && turnsPlayed > 1)
+                || turnsPlayed >= table.activePlayers().size())) {
+            // Can we go to the next round?
             boolean allInPlayersMatchedBet = true;
             for (Player p : table.activePlayers()) {
                 if (p.getBet() < table.getCurrentBet() && !p.isAllIn()) allInPlayersMatchedBet = false;
@@ -148,8 +132,7 @@ public class TableController extends Observable {
     private synchronized Player getBlind(TurnNotification blind) {
         Player currentPlayer = table.next();
         turnsPlayed++;
-        currentPlayer.bet(blind.getRequiredBet());
-        table.addToPot(blind.getRequiredBet(), currentPlayer);
+        table.handleBet(currentPlayer,blind.getRequiredBet());
         return currentPlayer;
     }
 
@@ -174,9 +157,7 @@ public class TableController extends Observable {
         while (state == State.PROCESSING) {
             try {
                 wait();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+            } catch (InterruptedException ignored) {}
         }
         return table;
     }
@@ -245,9 +226,7 @@ public class TableController extends Observable {
         while (state == State.STARTING || state == State.PROCESSING) {
             try {
                 this.wait();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+            } catch (InterruptedException ignored) {}
         }
     }
 }

@@ -101,33 +101,52 @@ public class TableImpl implements Table {
     }
 
     @Override
-    public void addToPot(int i, Player p) {
+    public void handleBet(Player player, int amount) {
+        player.bet(amount);
+        addToPot(player,amount);
+        setCurrentBet(Math.max(player.getBet(), getCurrentBet()));
+    }
+
+
+
+    @Override
+    public void addToPot(Player p, int amount) {
         int j = 0;
         if (pots.get(0).getBets().isEmpty() || !pots.get(0).getBets().containsKey(p)) {
-            pots.get(0).add(p, i);
+            pots.get(0).add(p, amount);
             return;
         }
-        while (i > 0 && j < pots.size()) {
+        while (amount > 0 && j < pots.size()) {
             Pot pot = pots.get(j);
             int max = pot.getBets().values().stream().max(Integer::compareTo).orElseThrow(IllegalStateException::new);
             if (pot.getBets().get(p) < max) {
                 int diff = max - pot.getBets().get(p);
-                if (i >= diff) {
+                if (amount >= diff) {
                     pot.getBets().replace(p, pot.getBets().get(p) + diff);
-                    i -= diff;
+                    amount -= diff;
                 } else {
-                    pot.getBets().replace(p, pot.getBets().get(p) + i);
-                    i = 0;
+                    pot.getBets().replace(p, pot.getBets().get(p) + amount);
+                    amount = 0;
                 }
             }
             j++;
         }
-        pots.get(pots.size() - 1).add(p, i);
+        pots.get(pots.size() - 1).add(p, amount);
     }
 
     @Override
     public List<Pot> getPots() {
         return this.pots;
+    }
+
+    @Override
+    public Pot getLastPot() {
+        return getPots().get(getPots().size() - 1);
+    }
+
+    @Override
+    public void splitLastPot(Player player, int amount) {
+        addPot(getLastPot().split(player, amount));
     }
 
     @Override
@@ -141,7 +160,7 @@ public class TableImpl implements Table {
 
     @Override
     public boolean hasNext() {
-        return activePlayers().size() > 0;
+        return !activePlayers().isEmpty();
     }
 
     @Override

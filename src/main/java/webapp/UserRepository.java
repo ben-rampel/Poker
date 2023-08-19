@@ -15,9 +15,9 @@ public class UserRepository {
     Connection DBConn;
 
     @Autowired
-    public UserRepository(String[] databaseParameters) {
+    public UserRepository() {
         try {
-            DBConn = DriverManager.getConnection(databaseParameters[0], databaseParameters[1], databaseParameters[2]);
+            DBConn = DriverManager.getConnection("jdbc:sqlite:brampel_poker.db");
             Statement statement = DBConn.createStatement();
             String buildDatabase =
                     "CREATE TABLE IF NOT EXISTS users (" +

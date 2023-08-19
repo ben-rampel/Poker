@@ -107,28 +107,25 @@
     <div class="game">
         <div class="dashboard">
             <h5>Player: {{player}}</h5>
-            <p ng-if="currentGameData.personalCards[0] != null">Your Cards:</p>
-            <p ng-if="currentGameData.personalCards[0] != null" ng-repeat="card in currentGameData.personalCards">
-                <img class="cardimg"
-                     src="{{(currentGameData.personalCards[0] != null) ? $ctrl.getCardUrl(card.rank,card.suit) : ''}}"
-                />
-            </p>
+            <div ng-if="currentGameData.personalCards[0] != null">
+                <p>Your Cards:</p>
+                <p ng-repeat="card in currentGameData.personalCards">
+                    <img class="cardimg"
+                         src="{{(currentGameData.personalCards[0] != null) ? $ctrl.getCardUrl(card.rank,card.suit) : ''}}"
+                    />
+                </p>
+            </div>
+
             <div style="margin-bottom: 4px;" class="input-group" ng-if="currentGameData.turnNotification != null"
                  ng-repeat="option in currentGameData.turnNotification.options">
-                <input class="form-control" id="raiseValue" ng-if="option === 'RAISE'" ng-model="$ctrl.raiseBet">
-                <input class="form-control" id="betValue" ng-if="option === 'BET'" ng-model="$ctrl.raiseBet">
+                <input class="form-control" id="raiseValue" ng-if="option === 'RAISE' || option === 'BET'" ng-model="$ctrl.raiseBet">
 
-                <div ng-if="option === 'RAISE'" class="input-group-append">
-                    <button type="button" class="btn btn-primary" ng-click="submitTurn(option, $ctrl.bet)">
+                <div class="input-group-append">
+                    <button type="button" class="btn btn-primary" ng-click="submitTurn(option)">
                         {{option}}
                         {{(option == 'CALL') ? $ctrl.bet : ""}}
                     </button>
                 </div>
-                <button ng-if="option !== 'RAISE'" type="button" class="btn btn-primary"
-                        ng-click="submitTurn(option, $ctrl.bet)">
-                    {{option}}
-                    {{(option == 'CALL') ? $ctrl.bet : ""}}
-                </button>
             </div>
 
 
